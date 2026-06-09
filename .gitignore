@@ -83,3 +83,4 @@ cleanup*.js
 find*.js
 generate*.js
 backfill*.js
+seed*.js
