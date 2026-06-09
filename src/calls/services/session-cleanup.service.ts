@@ -85,6 +85,29 @@ export class SessionCleanupService {
         });
       }
 
+      // 3. Clean up ALL hanging regular requests (initiated / waiting) that are older than 5 minutes
+      // This prevents old requests from showing up when astrologer opens the app after server restart
+      const hangingHumanCalls = await this.callModel.find({
+        status: { $in: ['initiated', 'waiting'] },
+        isAi: { $ne: true },
+        requestCreatedAt: { $lt: new Date(now.getTime() - 5 * 60 * 1000) }
+      });
+
+      for (const req of hangingHumanCalls) {
+        this.logger.warn(`[Cleanup] Cancelling hung human call request: ${req.sessionId}`);
+        await this.callModel.updateOne({ sessionId: req.sessionId }, { 
+          status: 'cancelled', 
+          endReason: 'system_timeout_cleanup', 
+          endTime: new Date(),
+          endedBy: 'system'
+        });
+        
+        // Also free up astrologer availability
+        if (req.astrologerId) {
+          await this.availabilityService.setAvailable(req.astrologerId.toString()).catch(() => {});
+        }
+      }
+
     } catch (e: any) {
       this.logger.error(`Error during AI Call cleanup: ${e.message}`);
     }
@@ -108,6 +131,29 @@ export class SessionCleanupService {
         if (inactivityDuration > 15 * 60 * 1000) {
           this.logger.warn(`[AI Cleanup] Ending inactive AI Chat: ${chat.sessionId}`);
           await this.chatSessionService.endSession(chat.sessionId, 'system', 'ai_inactivity_timeout');
+        }
+      }
+
+      // 2. Clean up ALL hanging regular chat requests (initiated / waiting) that are older than 5 minutes
+      // This prevents old chat requests from showing up when astrologer opens the app after server restart
+      const hangingHumanChats = await this.chatModel.find({
+        status: { $in: ['initiated', 'waiting'] },
+        orderId: { $not: /^AI-/ }, // not AI chats
+        requestCreatedAt: { $lt: new Date(now.getTime() - 5 * 60 * 1000) }
+      });
+
+      for (const req of hangingHumanChats) {
+        this.logger.warn(`[Cleanup] Cancelling hung human chat request: ${req.sessionId}`);
+        await this.chatModel.updateOne({ sessionId: req.sessionId }, { 
+          status: 'cancelled', 
+          endReason: 'system_timeout_cleanup', 
+          endTime: new Date(),
+          endedBy: 'system'
+        });
+        
+        // Also free up astrologer availability
+        if (req.astrologerId) {
+          await this.availabilityService.setAvailable(req.astrologerId.toString()).catch(() => {});
         }
       }
     } catch (e: any) {
