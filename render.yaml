@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: vaidik-talk-backend
+    env: docker
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    plan: free # Can be upgraded to 'starter' for better performance
+    region: singapore # Choose the region closest to your users
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromConfigVar: MONGODB_URI
+      - key: OPENAI_API_KEY
+        fromConfigVar: OPENAI_API_KEY
+      - key: JWT_SECRET
+        generateValue: true
+      # Add other essential env vars here

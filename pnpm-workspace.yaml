@@ -1,0 +1,11 @@
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - '@scarf/scarf'
+  - aws-sdk
+  - bcrypt
+  - protobufjs
+  - sharp
+  - unrs-resolver

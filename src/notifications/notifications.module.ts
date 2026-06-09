@@ -1,0 +1,62 @@
+// notifications/notifications.module.ts
+import { Module, forwardRef } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule, ConfigService } from '@nestjs/config'; // 1. Import ConfigService
+import { JwtModule } from '@nestjs/jwt';
+
+// Controllers
+import { NotificationController } from './controllers/notification.controller';
+
+// Services
+import { NotificationService } from './services/notification.service';
+import { FcmService } from './services/fcm.service';
+import { NotificationDeliveryService } from './services/notification-delivery.service';
+
+// Gateways
+import { NotificationGateway } from './gateways/notification.gateway';
+
+// Schemas
+import { Notification, NotificationSchema } from './schemas/notification.schema';
+import { ScheduledNotification, ScheduledNotificationSchema } from './schemas/scheduled-notification.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
+import { Astrologer, AstrologerSchema } from '../astrologers/schemas/astrologer.schema';
+import { AiAstrologerProfile, AiAstrologerProfileSchema } from '../ai-astrologers/schemas/ai-astrologers-profile.schema';
+import { ChatModule } from 'src/chat/chat.module';
+
+@Module({
+  imports: [
+    ConfigModule,
+    // 2. Use registerAsync to ensure JWT_SECRET is loaded correctly
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '7d' },
+      }),
+      inject: [ConfigService],
+    }),
+    MongooseModule.forFeature([
+      { name: Notification.name, schema: NotificationSchema },
+      { name: ScheduledNotification.name, schema: ScheduledNotificationSchema },
+      { name: User.name, schema: UserSchema },
+      { name: Astrologer.name, schema: AstrologerSchema },
+      { name: AiAstrologerProfile.name, schema: AiAstrologerProfileSchema },
+    ]),
+    forwardRef(() => ChatModule),
+    forwardRef(() => require('../admin/features/notifications/notifications.module').AdminNotificationsModule),
+  ],
+  controllers: [NotificationController],
+  providers: [
+    NotificationService,
+    FcmService,
+    NotificationDeliveryService,
+    NotificationGateway,
+  ],
+  exports: [
+    NotificationService,
+    NotificationDeliveryService,
+    NotificationGateway,
+    MongooseModule,
+  ],
+})
+export class NotificationsModule {}
