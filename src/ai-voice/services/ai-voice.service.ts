@@ -397,6 +397,40 @@ ${previousTranscriptContext}
   }
 
   /**
+   * Forcefully terminate an active Vapi call via API.
+   * This acts as the Server-Side Kill Switch when wallet balance expires.
+   */
+  async forceStopVapiCall(vapiCallId: string): Promise<boolean> {
+    if (!vapiCallId) return false;
+    try {
+      const vapiApiKey = this.configService.get<string>('VAPI_API_KEY');
+      if (!vapiApiKey) {
+        this.logger.error('❌ [AiVoiceService] VAPI_API_KEY is missing. Cannot force stop call.');
+        return false;
+      }
+
+      this.logger.warn(`🛑 [AiVoiceService] Force stopping Vapi Call ID: ${vapiCallId} at infrastructure level.`);
+      
+      const response = await axios.patch(
+        `${this.vapiBaseUrl}/call/${vapiCallId}`,
+        { status: 'ended' },
+        {
+          headers: {
+            'Authorization': `Bearer ${vapiApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      this.logger.log(`✅ [AiVoiceService] Successfully stopped Vapi Call ID: ${vapiCallId}`);
+      return true;
+    } catch (error: any) {
+      this.logger.error(`❌ [AiVoiceService] Failed to force stop Vapi Call ID ${vapiCallId}: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
    * Handle Webhooks from Vapi.ai (e.g., when call ends)
    */
   async handleVapiWebhook(payload: any): Promise<void> {

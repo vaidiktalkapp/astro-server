@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger, forwardRef, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 import { GeminiVoiceService } from '../../ai-voice/services/gemini-voice.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -45,6 +47,7 @@ export class CallSessionService {
     private availabilityService: AvailabilityService,
     @Inject(forwardRef(() => GeminiVoiceService))
     private geminiVoiceService: GeminiVoiceService,
+    private configService: ConfigService,
   ) { }
 
   private generateSessionId(): string {
@@ -643,6 +646,28 @@ export class CallSessionService {
     if (!session) {
       this.logger.log(`⚠️ [CallSessionService] endSession called for already ended or non-existent session: ${sessionId}. Skipping duplicate closure.`);
       return { success: true, message: 'Session already ended' };
+    }
+
+    // ✅ SERVER-SIDE KILL SWITCH FOR VAPI AI CALLS
+    if (session.isAi && session.voiceProvider === 'vapi' && session.vapiCallId) {
+      this.logger.warn(`🛑 [CallSessionService] Server-Side Kill Switch activated for Vapi Call ID: ${session.vapiCallId}`);
+      try {
+        const vapiApiKey = this.configService.get<string>('VAPI_API_KEY');
+        if (vapiApiKey) {
+          // Fire-and-forget to not block the billing update
+          axios.patch(
+            `https://api.vapi.ai/call/${session.vapiCallId}`,
+            { status: 'ended' },
+            { headers: { 'Authorization': `Bearer ${vapiApiKey}`, 'Content-Type': 'application/json' } }
+          ).then(() => {
+            this.logger.log(`✅ [CallSessionService] Successfully forcefully killed Vapi call ${session.vapiCallId}`);
+          }).catch((err) => {
+            this.logger.error(`❌ [CallSessionService] Failed to force kill Vapi call: ${err.message}`);
+          });
+        }
+      } catch (e) {
+        this.logger.error(`❌ [CallSessionService] Error executing Vapi Kill Switch: ${e.message}`);
+      }
     }
 
     if (transcript) {

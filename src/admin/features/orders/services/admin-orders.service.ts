@@ -696,7 +696,7 @@ export class AdminOrdersService {
       this.callSessionModel
         .find(filter)
         .populate('userId', 'name phoneNumber profileImage')
-        .populate({ path: 'astrologerId', select: 'name displayName profilePicture image', model: 'Astrologer' })
+        .populate({ path: 'astrologerId', select: 'name displayName profilePicture image' })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -746,7 +746,7 @@ export class AdminOrdersService {
       this.chatSessionModel
         .find(filter)
         .populate('userId', 'name phoneNumber profileImage')
-        .populate({ path: 'astrologerId', select: 'name displayName profilePicture image', model: 'Astrologer' })
+        .populate({ path: 'astrologerId', select: 'name displayName profilePicture image' })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
