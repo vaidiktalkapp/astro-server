@@ -133,14 +133,18 @@ export class CallRecordingService {
     }
   }
 
-  async stopRecording(sessionId: string, channelName: string): Promise<any> {
+  async stopRecording(sessionId: string, channelName: string, dbResourceId?: string, dbSid?: string, dbUid?: number): Promise<any> {
     const recordingInfo = this.activeRecordings.get(sessionId);
-    if (!recordingInfo) {
-      this.logger.warn(`Stop requested for ${sessionId}, but no local active recording found.`);
-      return { success: false, message: 'No active recording found locally' };
+    
+    const resourceId = recordingInfo?.resourceId || dbResourceId;
+    const sid = recordingInfo?.sid || dbSid;
+    const uid = recordingInfo?.uid || dbUid;
+
+    if (!resourceId || !sid || !uid) {
+      this.logger.warn(`Stop requested for ${sessionId}, but no active recording found (locally or in DB).`);
+      return { success: false, message: 'No active recording found' };
     }
 
-    const { resourceId, sid, uid } = recordingInfo;
     const url = `https://api.agora.io/v1/apps/${this.AGORA_APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/stop`;
 
     try {

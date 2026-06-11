@@ -337,6 +337,15 @@ agoraAstrologerUid?: number; // UID for astrologer
 @Prop()
 recordingStarted: Date; // Agora recording start time
 
+@Prop()
+agoraResourceId?: string;
+
+@Prop()
+agoraSid?: string;
+
+@Prop({ type: Number })
+agoraRecordingUid?: number;
+
   // ===== METADATA =====
   @Prop({ default: false })
   isDeleted: boolean;

@@ -469,6 +469,12 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
           recordingUid,
         );
         this.activeRecordings.set(sessionId, recordingResult.recordingId);
+        
+        session.agoraResourceId = recordingResult.resourceId;
+        session.agoraSid = recordingResult.recordingId;
+        session.agoraRecordingUid = recordingUid;
+        await session.save();
+
         recordingStarted = true;
       } catch (recErr) {
         this.logger.error(`Recording failed: ${recErr}`);
@@ -592,10 +598,8 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.stopSessionTimer(sessionId);
 
       // 1. Trigger Recording Stop in BACKGROUND (Fire-and-Forget)
-      if (this.activeRecordings.has(sessionId)) {
-        this.handleBackgroundRecordingStop(sessionId);
-        this.activeRecordings.delete(sessionId);
-      }
+      this.handleBackgroundRecordingStop(sessionId);
+      this.activeRecordings.delete(sessionId);
 
       // 2. End Session IMMEDIATELY (Don't wait for recording)
       const result = await this.callSessionService.endSession(
@@ -641,7 +645,10 @@ export class CallGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const recResult = await this.callRecordingService.stopRecording(
         sessionId,
-        session.agoraChannelName || ''
+        session.agoraChannelName || '',
+        session.agoraResourceId,
+        session.agoraSid,
+        session.agoraRecordingUid
       );
 
       if (recResult.recordingUrl) {

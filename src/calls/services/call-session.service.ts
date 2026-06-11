@@ -1011,20 +1011,15 @@ export class CallSessionService {
           if (elapsedSeconds > session.maxDurationSeconds + 15) {
             this.logger.warn(`🧹 [Cron] Terminating stale call session ${session.sessionId}. Elapsed: ${elapsedSeconds}s, Max: ${session.maxDurationSeconds}s`);
             
-            await this.endSession(session.sessionId, 'system', 'timeout');
-
-            // Emit socket events to notify clients to close screens
+            // Emit socket events before terminating
             if (this.callGateway && typeof this.callGateway.server !== 'undefined') {
               this.callGateway.server.to(session.sessionId).emit('timer_ended', {
                 sessionId: session.sessionId,
                 reason: 'max_duration_reached',
                 timestamp: new Date()
               });
-              this.callGateway.server.to(session.sessionId).emit('call_ended', {
-                sessionId: session.sessionId,
-                reason: 'timeout'
-              });
             }
+            await this.callGateway.terminateCall(session.sessionId, 'system', 'timeout');
           }
         }
       }
@@ -1036,7 +1031,11 @@ export class CallSessionService {
   private setAutoEndTimer(sessionId: string, maxDurationSeconds: number) {
     const timeout = setTimeout(async () => {
       try {
-        await this.endSession(sessionId, 'system', 'timeout');
+        if (this.callGateway) {
+          await this.callGateway.terminateCall(sessionId, 'system', 'timeout');
+        } else {
+          await this.endSession(sessionId, 'system', 'timeout');
+        }
         this.sessionTimers.delete(sessionId);
       } catch (error: any) { }
     }, maxDurationSeconds * 1000);
