@@ -54,8 +54,9 @@ export class SessionCleanupService {
         }
         
         // Safety check 2: If user has been offline for more than 3 minutes
+        const lastSeenTime = session.userStatus?.lastSeen?.getTime() || (session.startTime || session.createdAt).getTime();
         const isUserOffline = !session.userStatus?.isOnline && 
-                            (!session.userStatus?.lastSeen || session.userStatus.lastSeen.getTime() < (now.getTime() - 3 * 60 * 1000));
+                            (lastSeenTime < (now.getTime() - 3 * 60 * 1000));
         
         if (isUserOffline) {
           shouldEnd = true;
