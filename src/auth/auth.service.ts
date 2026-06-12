@@ -174,7 +174,7 @@ export class AuthService {
           phoneNumber,
           countryCode,
           expiryTime: 600,
-          ...(process.env.NODE_ENV === 'development' && result.otp && { otp: result.otp })
+          // ✅ SECURITY: OTP is NEVER returned to frontend (check server logs for testing)
         }
       };
     } catch (error) {
@@ -192,7 +192,7 @@ export class AuthService {
           phoneNumber,
           countryCode,
           expiryTime: 600,
-          ...(process.env.NODE_ENV === 'development' && result.otp && { otp: result.otp })
+          // ✅ SECURITY: OTP is NEVER returned to frontend (check server logs for testing)
         }
       };
     } catch (error) {

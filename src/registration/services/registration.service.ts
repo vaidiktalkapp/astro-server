@@ -49,7 +49,7 @@ export class RegistrationService {
         data: {
           phoneNumber,
           countryCode: `+${countryCode}`,
-          ...(result.otp && { otp: result.otp }) // Include OTP in dev mode
+          // ✅ SECURITY: OTP is NEVER returned to frontend
         }
       };
     } catch (error) {

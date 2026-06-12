@@ -274,7 +274,7 @@ export class AstrologerAuthService {
         phoneNumber,
         countryCode: `+${countryCode}`,
         expiryTime: 600,
-        ...(process.env.NODE_ENV === 'development' && result.otp && { otp: result.otp })
+        // ✅ SECURITY: OTP is NEVER returned to frontend
       }
     };
   }
