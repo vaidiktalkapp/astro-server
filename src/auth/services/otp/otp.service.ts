@@ -21,7 +21,6 @@ export class TooManyRequestsException extends HttpException {
 @Injectable()
 export class OtpService {
   private readonly logger = new Logger(OtpService.name);
-  private readonly VEPAAR_API_URL = 'https://api.vepaar.com/api/v1/send-otp';
 
   // 🧪 Test ACCOUNT CREDENTIALS
   private readonly DEMO_PHONES = ['9873211086', '7878787878'];
@@ -31,7 +30,7 @@ export class OtpService {
     private configService: ConfigService,
     private otpStorage: OtpStorageService,
   ) {
-    this.logger.log('🔐 OTP Service initialized with Vepaar API');
+    this.logger.log('🔐 OTP Service initialized with Meta WhatsApp API');
   }
 
   // Normalize phone number to strip formatting and country codes
@@ -119,8 +118,8 @@ export class OtpService {
       // Store OTP
       this.otpStorage.storeOTP(cleanPhone, countryCode, otp, 10); // 10 minutes
 
-      // FIXED: Send via Vepaar API - Exact as specified
-      const otpSent = await this.sendVepaarOTP(cleanPhone, countryCode, otp);
+      // FIXED: Send via Meta WhatsApp API
+      const otpSent = await this.sendWhatsAppOTP(cleanPhone, countryCode, otp);
 
       if (!otpSent && this.configService.get('NODE_ENV') === 'production') {
         throw new BadRequestException('Failed to send OTP via WhatsApp. Please try again.');
@@ -145,66 +144,81 @@ export class OtpService {
     }
   }
 
-  // FIXED: Exact Vepaar API implementation as per documentation
-  private async sendVepaarOTP(
+  // FIXED: Direct Meta WhatsApp API implementation
+  private async sendWhatsAppOTP(
     phoneNumber: string,
     countryCode: string,
     otp: string
   ): Promise<boolean> {
     try {
-      // Create mobileNumberWithCallingCode exactly as specified
       const mobileNumberWithCallingCode = `${countryCode}${phoneNumber}`;
+      this.logger.log(`📞 Sending OTP ${otp} to ${mobileNumberWithCallingCode} via Meta WhatsApp API`);
 
-      this.logger.log(`📞 Sending OTP ${otp} to ${mobileNumberWithCallingCode} via Vepaar API`);
+      const token = this.configService.get<string>('WHATSAPP_TOKEN');
+      const phoneNumberId = this.configService.get<string>('WHATSAPP_PHONE_NUMBER_ID');
 
-      // EXACT FormData implementation as per Vepaar documentation
-      const formData = new FormData();
-      formData.append('otp', otp);
-      formData.append('mobileNumberWithCallingCode', mobileNumberWithCallingCode);
-
-      // Make API call exactly as specified
-      const response = await axios.post(this.VEPAAR_API_URL, formData, {
-        headers: {
-          ...formData.getHeaders(),
-        },
-        timeout: 30000, // 30 seconds timeout
-      });
-
-      this.logger.log(`✅ Vepaar API Response:`, {
-        status: response.status,
-        statusText: response.statusText,
-        data: response.data
-      });
-
-      // Check for successful response
-      if (response.status === 200 || response.status === 201) {
-        this.logger.log(`✅ OTP sent successfully to ${mobileNumberWithCallingCode}`);
-        return true;
-      } else {
-        this.logger.error(`❌ Vepaar API returned status: ${response.status}`);
+      if (!token || !phoneNumberId) {
+        this.logger.error('❌ Missing WHATSAPP_TOKEN or WHATSAPP_PHONE_NUMBER_ID in environment variables');
         return false;
       }
 
+      const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
+
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: mobileNumberWithCallingCode,
+        type: 'template',
+        template: {
+          name: 'vaidiktalk_otp',
+          language: {
+            code: 'en'
+          },
+          components: [
+            {
+              type: 'body',
+              parameters: [
+                {
+                  type: 'text',
+                  text: otp
+                }
+              ]
+            },
+            {
+              type: 'button',
+              sub_type: 'url',
+              index: '0',
+              parameters: [
+                {
+                  type: 'text',
+                  text: otp
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      const response = await axios.post(url, payload, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
+      });
+
+      this.logger.log(`✅ Meta API Response:`, {
+        status: response.status,
+        data: response.data
+      });
+
+      return true;
+
     } catch (error: any) {
-      this.logger.error('❌ Vepaar API Error:', {
+      this.logger.error('❌ Meta API Error:', {
         message: error.message,
         status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          timeout: error.config?.timeout
-        }
+        data: error.response?.data
       });
-
-      // Log the exact request that was sent for debugging
-      this.logger.error('❌ Failed request details:', {
-        url: this.VEPAAR_API_URL,
-        phoneNumber: `${countryCode}${phoneNumber}`,
-        otpLength: otp.length
-      });
-
       return false;
     }
   }
@@ -260,31 +274,29 @@ export class OtpService {
     return await this.sendOTP(phoneNumber, countryCode);
   }
 
-  // Test Vepaar API with your phone number
-  async testVepaarConnection(testPhoneNumber?: string): Promise<{
+  // Test Meta API Connection
+  async testWhatsAppConnection(testPhoneNumber?: string): Promise<{
     success: boolean;
     message: string;
     details?: any;
   }> {
     try {
-      // Use provided test number or default
       const phoneNumber = testPhoneNumber || '9999999999';
       const countryCode = '91';
       const testOTP = this.generateOTP();
 
-      this.logger.log(`🧪 Testing Vepaar API with ${countryCode}${phoneNumber}`);
+      this.logger.log(`🧪 Testing Meta API with ${countryCode}${phoneNumber}`);
 
-      const success = await this.sendVepaarOTP(phoneNumber, countryCode, testOTP);
+      const success = await this.sendWhatsAppOTP(phoneNumber, countryCode, testOTP);
 
       return {
         success,
         message: success
-          ? `Vepaar API test successful! OTP sent to +${countryCode}${phoneNumber}`
-          : 'Vepaar API test failed - check logs for details',
+          ? `Meta API test successful! OTP sent to +${countryCode}${phoneNumber}`
+          : 'Meta API test failed - check logs for details',
         details: {
           testNumber: `+${countryCode}${phoneNumber}`,
           testOTP,
-          endpoint: this.VEPAAR_API_URL,
           timestamp: new Date().toISOString()
         }
       };
@@ -292,10 +304,9 @@ export class OtpService {
     } catch (error: any) {
       return {
         success: false,
-        message: 'Vepaar API test failed',
+        message: 'Meta API test failed',
         details: {
-          error: error.message,
-          endpoint: this.VEPAAR_API_URL
+          error: error.message
         }
       };
     }
@@ -304,7 +315,6 @@ export class OtpService {
   // Get detailed debug info
   getDebugInfo() {
     return {
-      vepaarEndpoint: this.VEPAAR_API_URL,
       nodeEnv: this.configService.get('NODE_ENV'),
       timestamp: new Date().toISOString(),
       version: '1.0.0'

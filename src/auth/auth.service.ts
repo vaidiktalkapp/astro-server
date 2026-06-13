@@ -1,10 +1,10 @@
 // src/auth/auth.service.ts (UPDATED - OPTIONAL FCM TOKEN)
-import { 
-  Injectable, 
-  BadRequestException, 
-  UnauthorizedException, 
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
   ForbiddenException,
-  Logger 
+  Logger
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -43,7 +43,7 @@ export class AuthService {
     private truecallerService: TruecallerService,
     private configService: ConfigService,
     private cacheService: SimpleCacheService,
-  ) {}
+  ) { }
 
   private getCurrencyFromCountryCode(countryCode: string): string {
     const currency = this.countryCurrencyMap[countryCode];
@@ -84,15 +84,15 @@ export class AuthService {
 
       // Search for existing device by deviceId AND deviceName
       const existingDeviceIndex = user.devices.findIndex(
-        (d: any) => 
-          d.deviceId === deviceInfo.deviceId || 
+        (d: any) =>
+          d.deviceId === deviceInfo.deviceId ||
           (deviceInfo.deviceName && d.deviceName === deviceInfo.deviceName && d.deviceType === deviceInfo.deviceType)
       );
 
       if (existingDeviceIndex !== -1) {
         // Device exists - update metadata (FCM token is optional)
         const oldFcmToken = user.devices[existingDeviceIndex].fcmToken;
-        
+
         user.devices[existingDeviceIndex] = {
           ...user.devices[existingDeviceIndex],
           fcmToken: deviceInfo.fcmToken || user.devices[existingDeviceIndex].fcmToken, // Keep old if new not provided
@@ -133,24 +133,24 @@ export class AuthService {
         const oldDevicesWithFcm = user.devices
           .filter(d => d.deviceId !== deviceInfo.deviceId && d.fcmToken)
           .map(d => d.fcmToken);
-        
+
         if (oldDevicesWithFcm.length > 0) {
           this.logger.log('📤 Sending force logout to old devices:', oldDevicesWithFcm.length);
           // Fire-and-forget notification
-          this.sendForceLogoutNotification(oldDevicesWithFcm, 'user').catch(err => 
+          this.sendForceLogoutNotification(oldDevicesWithFcm, 'user').catch(err =>
             this.logger.error('Failed to send force logout:', err)
           );
         }
 
         // Keep only current device
         user.devices = user.devices.filter(d => d.deviceId === deviceInfo.deviceId);
-        
+
         this.logger.log('✅ AUTH SERVICE: Kept only current device (single device mode)');
       }
 
       // Save user with updated devices
       await user.save();
-      
+
       this.logger.log('✅ AUTH SERVICE: Device saved to database', {
         userId: (user._id as any).toString(),
         totalDevices: user.devices.length,
@@ -213,10 +213,10 @@ export class AuthService {
       hasDeviceInfo: !!deviceInfo,
       hasFcmToken: !!deviceInfo?.fcmToken,
     });
-    
+
     try {
       const isOtpValid = await this.otpService.verifyOTP(phoneNumber, countryCode, otp);
-      
+
       if (!isOtpValid) {
         this.logger.error('❌ AUTH SERVICE: OTP validation failed');
         throw new BadRequestException('Invalid OTP');
@@ -228,14 +228,14 @@ export class AuthService {
       const fullPhoneNumber = `+${countryCode}${phoneNumber}`;
       const currency = this.getCurrencyFromCountryCode(countryCode);
 
-      let user = await this.userModel.findOne({ 
+      let user = await this.userModel.findOne({
         $or: [
           { phoneNumber: phoneNumber },
           { phoneNumber: fullPhoneNumber },
           { phoneHash },
         ]
       }).exec();
-      
+
       let isNewUser = false;
       let restoreMessage: string | null = null;
 
@@ -274,30 +274,30 @@ export class AuthService {
         isNewUser = true;
       } else {
         this.logger.log('📤 AUTH SERVICE: Existing user found');
-        
-        // ✅ RESTORE LOGIC START
-      if (user.status === 'deleted') {
-        const now = new Date();
-        
-        // If scheduled deletion time has PASSED, deny login (even if cron hasn't run yet)
-        if (user.permanentDeletionAt && now > user.permanentDeletionAt) {
-          throw new ForbiddenException('Your account has been permanently deleted and cannot be restored.');
-        }
 
-        // Within grace period: Restore Account
-        this.logger.log(`♻️ Restoring user ${user._id} scheduled for deletion on ${user.permanentDeletionAt}`);
-        user.status = 'active';
-        user.permanentDeletionAt = undefined;
-        user.deletionReason = undefined;
-        restoreMessage = 'Welcome back! Your account deletion has been cancelled.';
-      } 
-      else if (user.status === 'inactive' || user.status === 'suspended') {
-        // Keep existing suspension logic if you have it, or reactivate inactive
-        if (user.status === 'suspended') {
-           throw new ForbiddenException('Your account is suspended. Please contact support.');
+        // ✅ RESTORE LOGIC START
+        if (user.status === 'deleted') {
+          const now = new Date();
+
+          // If scheduled deletion time has PASSED, deny login (even if cron hasn't run yet)
+          if (user.permanentDeletionAt && now > user.permanentDeletionAt) {
+            throw new ForbiddenException('Your account has been permanently deleted and cannot be restored.');
+          }
+
+          // Within grace period: Restore Account
+          this.logger.log(`♻️ Restoring user ${user._id} scheduled for deletion on ${user.permanentDeletionAt}`);
+          user.status = 'active';
+          user.permanentDeletionAt = undefined;
+          user.deletionReason = undefined;
+          restoreMessage = 'Welcome back! Your account deletion has been cancelled.';
         }
-        user.status = 'active';
-      }
+        else if (user.status === 'inactive' || user.status === 'suspended') {
+          // Keep existing suspension logic if you have it, or reactivate inactive
+          if (user.status === 'suspended') {
+            throw new ForbiddenException('Your account is suspended. Please contact support.');
+          }
+          user.status = 'active';
+        }
 
         const updateData: any = {
           isPhoneVerified: true,
@@ -315,11 +315,11 @@ export class AuthService {
           updateData,
           { new: true }
         );
-        
+
         if (!user) {
           throw new BadRequestException('User update returned null');
         }
-        
+
         this.logger.log('✅ AUTH SERVICE: Existing user updated');
       }
 
@@ -331,8 +331,8 @@ export class AuthService {
       );
 
       await this.cacheService.set(
-        `refresh_token_${(user._id as any).toString()}`, 
-        tokens.refreshToken, 
+        `refresh_token_${(user._id as any).toString()}`,
+        tokens.refreshToken,
         7 * 24 * 60 * 60
       );
 
@@ -364,7 +364,7 @@ export class AuthService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       throw new BadRequestException(`OTP verification failed: ${(error as any).message}`);
     }
   }
@@ -372,7 +372,7 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     try {
       const newTokens = this.jwtAuthService.refreshAccessToken(refreshToken);
-      
+
       return {
         success: true,
         message: 'Token refreshed successfully',
@@ -470,9 +470,9 @@ export class AuthService {
           user.status = 'active';
           user.permanentDeletionAt = undefined;
           user.deletionReason = undefined;
-        } 
+        }
         else if (user.status === 'suspended') {
-             throw new ForbiddenException('Your account is suspended.');
+          throw new ForbiddenException('Your account is suspended.');
         }
         else if (user.status === 'inactive') {
           user.status = 'active';
