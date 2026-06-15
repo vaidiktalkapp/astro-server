@@ -39,12 +39,6 @@ export class OtpStorageService {
     }, ttlMinutes * 60 * 1000);
   }
 
-  // Get Stored OTP metadata
-  getStoredOTP(phoneNumber: string, countryCode: string): StoredOTP | undefined {
-    const key = this.createKey(phoneNumber, countryCode);
-    return this.otpStore.get(key);
-  }
-
   // Retrieve and validate OTP
   validateOTP(phoneNumber: string, countryCode: string, enteredOTP: string): {
     valid: boolean;
@@ -93,7 +87,7 @@ export class OtpStorageService {
     }
 
     // Success - remove OTP
-    this.deleteOTP(phoneNumber, countryCode);
+    this.otpStore.delete(key);
     console.log(`✅ OTP validated successfully for key: ${key}`);
     
     return {
@@ -143,11 +137,6 @@ export class OtpStorageService {
   clearRateLimit(phoneNumber: string, countryCode: string): void {
     const key = this.createKey(phoneNumber, countryCode);
     this.rateLimitStore.delete(key);
-  }
-
-  deleteOTP(phoneNumber: string, countryCode: string): void {
-    const key = this.createKey(phoneNumber, countryCode);
-    this.otpStore.delete(key);
   }
 
   // Debug method
