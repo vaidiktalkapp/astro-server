@@ -90,9 +90,7 @@ export class AvailabilityService {
     if (av.isLive) return 'live';
 
     // 2. Reachability check FIRST
-    const isManuallyOnline = av.isOnline === true; // explicit toggle
-    const isScheduled = this.isWithinWorkingHours(av.workingHours); // weekly schedule
-    const isReachable = isManuallyOnline || isScheduled;
+    const isReachable = av.isOnline === true; // explicit toggle ONLY
 
     // 3. Not reachable at all — always offline (ignore any stale flags)
     if (!isReachable) return 'offline';
@@ -111,7 +109,7 @@ export class AvailabilityService {
     
     // 5. Busy via manual flag ONLY for astrologers who explicitly turned on their toggle.
     // Only apply if there's NO expired busyUntil (meaning it was a genuine manual toggle)
-    const isBusyManual = isManuallyOnline && av.isAvailable === false;
+    const isBusyManual = av.isOnline === true && av.isAvailable === false;
     if (isBusyManual) return 'busy';
 
     return 'online';
@@ -219,8 +217,8 @@ export class AvailabilityService {
     // ✔ Toggle ON = Universal availability
     if (av.isOnline) return true;
 
-    // ✔ Toggle OFF = Follow schedule
-    return this.isWithinWorkingHours(av.workingHours);
+    // ✔ Toggle OFF = Offline
+    return false;
   }
 
   async getWorkingHours(astrologerId: string): Promise<any> {

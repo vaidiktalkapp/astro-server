@@ -247,26 +247,7 @@ export class AstrologersService {
       });
 
       andConditions.push({
-        $or: [
-          // 1. Manually Online (Toggle ON)
-          { 'availability.isOnline': true },
-
-          // 2. OR Scheduled for Today & Current Time (Fallback if toggle is OFF)
-          {
-            'availability.workingHours': {
-              $elemMatch: {
-                day: currentDay,
-                slots: {
-                  $elemMatch: {
-                    isActive: true,
-                    start: { $lte: currentTime },
-                    end: { $gt: currentTime }
-                  }
-                }
-              }
-            }
-          }
-        ]
+        'availability.isOnline': true
       });
     }
 
