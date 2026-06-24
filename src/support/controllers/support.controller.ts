@@ -19,6 +19,8 @@ import { PayoutRequest, PayoutRequestDocument } from '../../payments/schemas/pay
 import { ZohoDeskService } from '../services/zoho-desk.service';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { ConfigService } from '@nestjs/config';
+import * as jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AuthenticatedRequest extends Request {
   user: { _id: string; astrologerId?: string };
@@ -182,6 +184,41 @@ export class SupportController {
         chatUrl: `${this.configService.get<string>('ZOHO_DESK_WIDGET_URL')}?ticket=${zohoTicket.id}`,
       },
     };
+  }
+
+  // ===== GENERATE ZOHO JWT =====
+  @Get('zoho-jwt')
+  async getZohoJwt(@Req() req: AuthenticatedRequest) {
+    const isAstrologer = !!req.user.astrologerId;
+    let userContext: any;
+    
+    if (isAstrologer) {
+      const astrologer = await this.astrologerModel.findById(req.user.astrologerId).lean();
+      if (!astrologer) throw new BadRequestException('Astrologer not found');
+      userContext = astrologer;
+    } else {
+      const user = await this.userModel.findById(req.user._id).lean();
+      if (!user) throw new BadRequestException('User not found');
+      userContext = user;
+    }
+
+    const secret = this.configService.get<string>('ZOHO_DESK_SECRET');
+    if (!secret) {
+      throw new BadRequestException('Zoho Desk Secret not configured');
+    }
+
+    const payload = {
+      email: userContext.email || `${userContext.phoneNumber}@vaidiktalk.com`,
+      name: userContext.name || userContext.firstName || 'Vaidiktalk User',
+      jti: uuidv4(),
+    };
+
+    const token = jwt.sign(payload, secret, {
+      algorithm: 'HS256',
+      expiresIn: '1h',
+    });
+
+    return { success: true, jwt: token };
   }
 
   // ===== GET USER TICKETS =====
