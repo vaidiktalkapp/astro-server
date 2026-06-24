@@ -202,36 +202,23 @@ export class SupportController {
       userContext = user;
     }
 
-    const privateKey = this.configService.get<string>('ZOHO_ASAP_PRIVATE_KEY');
-    
-    // Fallback to HS256 if only secret is present (e.g. for SalesIQ web)
     const secret = this.configService.get<string>('ZOHO_DESK_SECRET');
 
-    if (!privateKey && !secret) {
+    if (!secret) {
       throw new BadRequestException('Zoho Desk Auth Key not configured');
     }
 
     const payload = {
       email: userContext.email || `${userContext.phoneNumber}@vaidiktalk.com`,
       name: userContext.name || userContext.firstName || 'Vaidiktalk User',
-      jti: uuidv4(),
     };
 
-    let token: string;
-    if (privateKey) {
-      // Use RS256 for Native Zoho Desk Portal SDK (ASAP)
-      const formattedKey = privateKey.replace(/\\n/g, '\n');
-      token = jwt.sign(payload, formattedKey, {
-        algorithm: 'RS256',
-        expiresIn: '1h',
-      });
-    } else {
-      // Fallback for Web/SalesIQ
-      token = jwt.sign(payload, secret!, {
-        algorithm: 'HS256',
-        expiresIn: '1h',
-      });
-    }
+    // Use HS256 for Native Zoho Desk Portal SDK (ASAP) and Web
+    // CRITICAL: Zoho Desk ASAP SDK requires the token expiry to be strictly LESS than 10 minutes.
+    const token = jwt.sign(payload, secret, {
+      algorithm: 'HS256',
+      expiresIn: '5m',
+    });
 
     return { success: true, jwt: token };
   }
