@@ -72,6 +72,32 @@ async function bootstrap() {
   );
 
   /**
+   * ✅ Protect Swagger with Basic Auth
+   * Username: admin
+   * Password: Vaidik@123
+   */
+  app.use('/api', (req: any, res: any, next: any) => {
+    // Only apply to swagger UI routes, not actual API endpoints (which use /api/v1)
+    if (req.originalUrl.startsWith('/api')) {
+      // Allow actual API calls to pass through without this auth
+      if (req.originalUrl.startsWith('/api/v1')) {
+         return next();
+      }
+
+      const authHeader = req.headers.authorization;
+      
+      // Basic Auth: admin / Vaidik@123
+      if (authHeader && authHeader === 'Basic YWRtaW46VmFpZGlrQDEyMw==') {
+        return next();
+      }
+      
+      res.setHeader('WWW-Authenticate', 'Basic realm="Vaidik API Documentation"');
+      return res.status(401).send('Unauthorized Access to API Documentation');
+    }
+    next();
+  });
+
+  /**
    * ✅ Swagger
    */
   const config = new DocumentBuilder()

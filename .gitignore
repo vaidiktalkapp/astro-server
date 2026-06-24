@@ -84,3 +84,6 @@ find*.js
 generate*.js
 backfill*.js
 seed*.js
+
+# Keys and certificates
+*.pem
