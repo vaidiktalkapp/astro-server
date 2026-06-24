@@ -218,6 +218,7 @@ export class SupportController {
     const token = jwt.sign(payload, secret, {
       algorithm: 'HS256',
       expiresIn: '5m',
+      jwtid: uuidv4(),
     });
 
     return { success: true, jwt: token };
