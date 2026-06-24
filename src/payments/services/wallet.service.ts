@@ -397,6 +397,27 @@ export class WalletService {
       const user = await this.userModel.findById(transaction.userId).session(session);
       if (!user) throw new NotFoundException('User not found');
 
+      // ✅ SECURITY FIX: Directly verify with Razorpay servers
+      if (status === 'completed') {
+        try {
+          const rzpPayment = await this.razorpayService.fetchPayment(paymentId);
+          if (rzpPayment.status !== 'captured') {
+            throw new BadRequestException(`Payment not captured in Razorpay. Real status: ${rzpPayment.status}`);
+          }
+          // Ensure this payment actually belongs to this exact transaction
+          if (rzpPayment.notes?.transactionId !== transactionId && rzpPayment.notes?.receipt !== transactionId) {
+            // Some versions store it in receipt, some in notes. We check both or throw
+            if (rzpPayment.description !== transactionId) { // extra fallback just in case
+               this.logger.warn(`Transaction mismatch in Razorpay validation for ${transactionId}`);
+               // But let's be strict:
+               throw new BadRequestException('Payment ID does not match this transaction');
+            }
+          }
+        } catch (error: any) {
+          throw new BadRequestException(`Failed to verify payment with Razorpay servers: ${error.message}`);
+        }
+      }
+
       transaction.paymentId = paymentId;
       transaction.status = status;
       let bonusTransaction: WalletTransactionDocument | null = null;
