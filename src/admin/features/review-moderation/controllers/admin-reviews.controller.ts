@@ -6,7 +6,8 @@ import {
   Query,
   Body,
   UseGuards,
-  Req
+  Req,
+  Delete
 } from '@nestjs/common';
 import { AdminReviewModerationService } from '../services/admin-reviews.service';
 import { AdminAuthGuard } from '../../../core/guards/admin-auth.guard';
@@ -80,6 +81,36 @@ export class AdminReviewsController {
       id,
       new Types.ObjectId(adminId),
       body.reason,
+    );
+  }
+
+  // Edit review
+  @Patch(':id')
+  @RequirePermissions(Permissions.REVIEWS_MANAGE)
+  async editReview(
+    @Param('id') id: string,
+    @Req() req,
+    @Body() body: any,
+  ) {
+    const adminId = req.admin?._id || req.user?.userId;
+    return this.adminReviewsModerationService.editReview(
+      id,
+      new Types.ObjectId(adminId),
+      body,
+    );
+  }
+
+  // Delete review
+  @Delete(':id')
+  @RequirePermissions(Permissions.REVIEWS_MANAGE)
+  async deleteReview(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    const adminId = req.admin?._id || req.user?.userId;
+    return this.adminReviewsModerationService.deleteReview(
+      id,
+      new Types.ObjectId(adminId),
     );
   }
 }

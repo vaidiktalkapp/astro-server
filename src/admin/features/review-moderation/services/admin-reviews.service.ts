@@ -6,12 +6,16 @@ import { Model, Types } from 'mongoose';
 import { Order, OrderDocument } from '../../../../orders/schemas/orders.schema';
 import { Review, ReviewDocument } from '../../../../reviews/schemas/review.schema';
 import { RatingReviewService } from '../../../../astrologers/services/rating-review.service';
+import { AiAstrologerProfile, AiAstrologerProfileDocument } from '../../../../ai-astrologers/schemas/ai-astrologers-profile.schema';
+import { Astrologer, AstrologerDocument } from '../../../../astrologers/schemas/astrologer.schema';
 
 @Injectable()
 export class AdminReviewModerationService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
-    @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>, // ✅ ADD
+    @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
+    @InjectModel(AiAstrologerProfile.name) private aiAstrologerModel: Model<AiAstrologerProfileDocument>,
+    @InjectModel(Astrologer.name) private astrologerModel: Model<AstrologerDocument>,
     private ratingReviewService: RatingReviewService,
   ) {}
 
@@ -22,7 +26,7 @@ export class AdminReviewModerationService {
     page = 1,
     limit = 20,
     status: 'pending' | 'approved' | 'rejected' | 'flagged' | 'all' = 'pending',
-  ) {
+  ): Promise<any> {
     const skip = (page - 1) * limit;
     
     // ✅ Build query for Review collection
@@ -32,11 +36,10 @@ export class AdminReviewModerationService {
       filter.moderationStatus = status;
     }
 
-    const [reviews, total] = await Promise.all([
+    const [rawReviews, total] = await Promise.all([
       this.reviewModel
         .find(filter)
         .populate('userId', 'name phoneNumber profileImage')
-        .populate('astrologerId', 'name email profilePicture ratings')
         .populate('moderatedBy', 'name email')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -44,6 +47,28 @@ export class AdminReviewModerationService {
         .lean(),
       this.reviewModel.countDocuments(filter),
     ]);
+
+    const astrologerIds = [...new Set(rawReviews.map(r => r.astrologerId?.toString()).filter(Boolean))];
+    
+    const [astrologers, aiAstrologers] = await Promise.all([
+      this.astrologerModel.find({ _id: { $in: astrologerIds } }).select('name email profilePicture ratings').lean(),
+      this.aiAstrologerModel.find({ _id: { $in: astrologerIds } }).select('name profilePicture rating').lean()
+    ]);
+
+    const astrologerMap = new Map();
+    astrologers.forEach((a: any) => astrologerMap.set(a._id.toString(), a));
+    aiAstrologers.forEach((a: any) => astrologerMap.set(a._id.toString(), {
+      _id: a._id,
+      name: a.name,
+      email: '',
+      profilePicture: a.image,
+      ratings: { average: a.rating || 0 }
+    }));
+
+    const reviews = rawReviews.map(r => ({
+      ...r,
+      astrologerId: astrologerMap.get(r.astrologerId?.toString()) || r.astrologerId
+    }));
 
     return {
       success: true,
@@ -162,13 +187,31 @@ export class AdminReviewModerationService {
   /**
    * ✅ Get review details
    */
-  async getReviewDetails(reviewId: string) {
-    const review = await this.reviewModel
+  async getReviewDetails(reviewId: string): Promise<any> {
+    let review = await this.reviewModel
       .findOne({ reviewId })
       .populate('userId', 'name email phoneNumber profileImage')
-      .populate('astrologerId', 'name profilePicture ratings')
       .populate('moderatedBy', 'name email')
       .lean();
+
+    if (review) {
+      const astId = review.astrologerId?.toString();
+      if (astId) {
+        let ast = await this.astrologerModel.findById(astId).select('name profilePicture ratings').lean();
+        if (!ast) {
+          const aiAst = await this.aiAstrologerModel.findById(astId).select('name image rating').lean();
+          if (aiAst) {
+            ast = {
+              _id: aiAst._id,
+              name: aiAst.name,
+              profilePicture: (aiAst as any).image,
+              ratings: { average: (aiAst as any).rating || 0 }
+            } as any;
+          }
+        }
+        (review as any).astrologerId = ast || review.astrologerId;
+      }
+    }
 
     if (!review) {
       throw new NotFoundException('Review not found');
@@ -186,6 +229,65 @@ export class AdminReviewModerationService {
         review,
         order,
       },
+    };
+  }
+  /**
+   * ✅ Edit review
+   */
+  async editReview(reviewId: string, adminId: Types.ObjectId, updateData: any) {
+    const review = await this.reviewModel.findOne({ reviewId });
+    
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    if (updateData.rating !== undefined) {
+      review.rating = Number(updateData.rating);
+    }
+    if (updateData.reviewText !== undefined) {
+      review.reviewText = updateData.reviewText;
+    }
+    if (review.isTestData) {
+      if (updateData.userName !== undefined) review.testUserName = updateData.userName;
+      if (updateData.userImage !== undefined) review.testUserImage = updateData.userImage;
+      if (updateData.serviceType !== undefined) review.serviceType = updateData.serviceType;
+    }
+
+    review.moderatedBy = adminId;
+    review.moderatedAt = new Date();
+    await review.save();
+
+    // ✅ Update astrologer ratings
+    await this.ratingReviewService.updateAstrologerRatings(review.astrologerId.toString());
+
+    return {
+      success: true,
+      message: 'Review updated successfully',
+      data: review,
+    };
+  }
+
+  /**
+   * ✅ Delete review (Soft delete)
+   */
+  async deleteReview(reviewId: string, adminId: Types.ObjectId) {
+    const review = await this.reviewModel.findOne({ reviewId });
+    
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    review.isDeleted = true;
+    review.moderatedBy = adminId;
+    review.moderatedAt = new Date();
+    await review.save();
+
+    // ✅ Update astrologer ratings (removes deleted review from calculation)
+    await this.ratingReviewService.updateAstrologerRatings(review.astrologerId.toString());
+
+    return {
+      success: true,
+      message: 'Review deleted successfully',
     };
   }
 }

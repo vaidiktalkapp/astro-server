@@ -411,6 +411,49 @@ export class RatingReviewService {
   }
 
   /**
+   * ✅ ADD ADMIN CUSTOM REVIEW
+   */
+  async addAdminCustomReview(astrologerId: string, customReview: any, adminId: string): Promise<any> {
+    const reviewId = `ADMIN_REV_${Date.now()}_${Math.random().toString(36).substring(7).toUpperCase()}`;
+    
+    // Validate rating
+    const rating = Number(customReview.rating) || 5;
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestException('Rating must be between 1 and 5');
+    }
+
+    // Create review
+    const review = new this.reviewModel({
+      reviewId,
+      userId: new Types.ObjectId('6931d93e4f7d2b2721788396'), // fallback user ID (must be a valid ObjectId length)
+      astrologerId: new Types.ObjectId(astrologerId),
+      orderId: `ADMIN_ORDER_${Date.now()}`, // fake order
+      rating,
+      reviewText: customReview.reviewText || '',
+      serviceType: customReview.serviceType || 'chat',
+      sessionDuration: Math.floor(Math.random() * 1800) + 300, // random duration between 5 to 35 mins
+      moderationStatus: 'approved',
+      moderatedBy: new Types.ObjectId(adminId),
+      moderatedAt: new Date(),
+      createdAt: new Date(),
+      isTestData: true, // Use test flag to inject custom user data
+      testUserName: customReview.userName || 'Anonymous',
+      testUserImage: customReview.userImage || null,
+    });
+
+    await review.save();
+    
+    // Update astrologer ratings
+    await this.updateAstrologerRatings(astrologerId);
+
+    return { 
+      success: true, 
+      message: 'Custom review added successfully', 
+      reviewId: review.reviewId 
+    };
+  }
+
+  /**
    * ✅ SEED TEST REVIEWS (For testing when no reviews exist)
    */
   async seedTestReviewsIfEmpty(astrologerId: string): Promise<void> {
@@ -433,35 +476,35 @@ export class RatingReviewService {
           reviewText: 'Amazing consultation! Very accurate predictions and great guidance.',
           serviceType: 'chat',
           userName: 'Priya Sharma',
-          userImage: 'https://i.pravatar.cc/150?img=1',
+          userImage: 'https://vaidiktalk.s3.ap-south-1.amazonaws.com/images/row-1-column-1.png',
         },
         {
           rating: 4,
           reviewText: 'Good experience. The astrologer was very patient and explained everything clearly.',
           serviceType: 'call',
           userName: 'Rahul Kumar',
-          userImage: 'https://i.pravatar.cc/150?img=12',
+          userImage: 'https://vaidiktalk.s3.ap-south-1.amazonaws.com/images/row-2-column-1.png',
         },
         {
           rating: 5,
           reviewText: 'Highly recommended! The remedies suggested were very effective.',
           serviceType: 'video_call',
           userName: 'Anjali Verma',
-          userImage: 'https://i.pravatar.cc/150?img=5',
+          userImage: 'https://vaidiktalk.s3.ap-south-1.amazonaws.com/images/row-3-column-1.png',
         },
         {
           rating: 5,
           reviewText: 'Very insightful session. Helped me understand my problems better.',
           serviceType: 'chat',
           userName: 'Vikram Singh',
-          userImage: 'https://i.pravatar.cc/150?img=15',
+          userImage: 'https://vaidiktalk.s3.ap-south-1.amazonaws.com/images/row-4-column-1.png',
         },
         {
           rating: 4,
-          reviewText: 'Professional and knowledgeable. Will consult again.',
+          reviewText: 'Great experience overall. Just wish the wait time was shorter.',
           serviceType: 'call',
           userName: 'Neha Gupta',
-          userImage: 'https://i.pravatar.cc/150?img=9',
+          userImage: 'https://vaidiktalk.s3.ap-south-1.amazonaws.com/images/row-4-column-2.png',
         },
       ];
 

@@ -72,7 +72,7 @@ export class AiAstrologersController {
         const profile = profileDoc.toObject();
 
         await this.ratingReviewService.seedTestReviewsIfEmpty(id);
-        const reviewsData = await this.ratingReviewService.getAstrologerReviews(id, 1, 5);
+        const reviewsData = await this.ratingReviewService.getAstrologerReviews(id, 1, 500);
 
         let isEligibleForFreeAi = false;
         let freeDurationMinutes = 1;

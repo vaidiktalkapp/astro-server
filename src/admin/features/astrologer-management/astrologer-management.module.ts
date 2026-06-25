@@ -40,6 +40,7 @@ import { Admin, AdminSchema } from '../../core/schemas/admin.schema';
     ]),
     ActivityLogsModule,
     forwardRef(() => require('../../../notifications/notifications.module').NotificationsModule),
+    forwardRef(() => require('../../../astrologers/astrologers.module').AstrologersModule),
   ],
   controllers: [
     AdminAstrologersController,

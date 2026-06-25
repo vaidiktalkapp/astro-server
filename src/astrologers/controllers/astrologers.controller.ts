@@ -237,15 +237,15 @@ export class AstrologersController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    const parsedPage = page ? Number(page) : 1;
-    const parsedLimit = limit ? Number(limit) : 10;
+    const parsedPage = page && !isNaN(Number(page)) ? Number(page) : 1;
+    const parsedLimit = limit && !isNaN(Number(limit)) ? Number(limit) : 10;
     
-    if (isNaN(parsedPage) || parsedPage < 1) {
+    if (parsedPage < 1) {
       throw new HttpException('Page must be at least 1', HttpStatus.BAD_REQUEST);
     }
     
-    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
-      throw new HttpException('Limit must be between 1 and 50', HttpStatus.BAD_REQUEST);
+    if (parsedLimit < 1 || parsedLimit > 100) {
+      throw new HttpException('Limit must be between 1 and 100', HttpStatus.BAD_REQUEST);
     }
 
     return this.ratingReviewService.getAstrologerReviews(
@@ -302,7 +302,7 @@ export class AstrologersController {
     
     // ✅ Include reviews if requested (default: true)
     const shouldIncludeReviews = includeReviews !== 'false';
-    const parsedReviewLimit = reviewLimit ? Number(reviewLimit) : 5;
+    const parsedReviewLimit = reviewLimit ? Number(reviewLimit) : 500;
     
     if (shouldIncludeReviews) {
       // ✅ Seed test reviews if none exist (for testing)

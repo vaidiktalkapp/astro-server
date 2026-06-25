@@ -26,12 +26,15 @@ import { UpdateAstrologerProfileDto } from '../dto/update-astrologer-profile.dto
 import { AstrologerQueryDto } from '../dto/astrologer-query.dto';
 import { PenaltyService } from '../../../../astrologers/services/penalty.service';
 
+import { RatingReviewService } from '../../../../astrologers/services/rating-review.service';
+
 @Controller('admin/astrologers')
 @UseGuards(AdminAuthGuard, PermissionsGuard)
 export class AdminAstrologersController {
   constructor(
     private adminAstrologersService: AdminAstrologersService,
-    private penaltyService: PenaltyService
+    private penaltyService: PenaltyService,
+    private ratingReviewService: RatingReviewService
   ) { }
 
   /**
@@ -144,6 +147,20 @@ export class AdminAstrologersController {
     @Body(ValidationPipe) pricingData: UpdatePricingDto,
   ) {
     return this.adminAstrologersService.updatePricing(astrologerId, admin._id, pricingData);
+  }
+
+  /**
+   * POST /admin/astrologers/:astrologerId/reviews
+   * Add a custom review for an astrologer
+   */
+  @Post(':astrologerId/reviews')
+  @RequirePermissions(Permissions.ASTROLOGERS_EDIT)
+  async addCustomReview(
+    @Param('astrologerId') astrologerId: string,
+    @CurrentAdmin() admin: any,
+    @Body() reviewData: any,
+  ) {
+    return this.ratingReviewService.addAdminCustomReview(astrologerId, reviewData, admin._id);
   }
 
   /**

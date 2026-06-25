@@ -5369,6 +5369,29 @@
         ]
       }
     },
+    "/api/v1/admin/astrologers/{astrologerId}/reviews": {
+      "post": {
+        "operationId": "AdminAstrologersController_addCustomReview",
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAstrologers"
+        ]
+      }
+    },
     "/api/v1/admin/astrologers/{astrologerId}/bio": {
       "patch": {
         "operationId": "AdminAstrologersController_updateBio",
@@ -6023,6 +6046,132 @@
         },
         "tags": [
           "AdminNotification"
+        ]
+      }
+    },
+    "/api/v1/registration/otp/send": {
+      "post": {
+        "operationId": "RegistrationController_sendOTP",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterSendOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Registration"
+        ]
+      }
+    },
+    "/api/v1/registration/otp/verify": {
+      "post": {
+        "operationId": "RegistrationController_verifyOTP",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterVerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Registration"
+        ]
+      }
+    },
+    "/api/v1/registration/register": {
+      "post": {
+        "operationId": "RegistrationController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Registration"
+        ]
+      }
+    },
+    "/api/v1/registration/status/ticket/{ticketNumber}": {
+      "get": {
+        "operationId": "RegistrationController_getStatusByTicket",
+        "parameters": [
+          {
+            "name": "ticketNumber",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Registration"
+        ]
+      }
+    },
+    "/api/v1/registration/status/phone": {
+      "get": {
+        "operationId": "RegistrationController_getStatusByPhone",
+        "parameters": [
+          {
+            "name": "phoneNumber",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "countryCode",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Registration"
         ]
       }
     },
@@ -7165,132 +7314,6 @@
         },
         "tags": [
           "AdminStream"
-        ]
-      }
-    },
-    "/api/v1/registration/otp/send": {
-      "post": {
-        "operationId": "RegistrationController_sendOTP",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterSendOtpDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Registration"
-        ]
-      }
-    },
-    "/api/v1/registration/otp/verify": {
-      "post": {
-        "operationId": "RegistrationController_verifyOTP",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterVerifyOtpDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Registration"
-        ]
-      }
-    },
-    "/api/v1/registration/register": {
-      "post": {
-        "operationId": "RegistrationController_register",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Registration"
-        ]
-      }
-    },
-    "/api/v1/registration/status/ticket/{ticketNumber}": {
-      "get": {
-        "operationId": "RegistrationController_getStatusByTicket",
-        "parameters": [
-          {
-            "name": "ticketNumber",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Registration"
-        ]
-      }
-    },
-    "/api/v1/registration/status/phone": {
-      "get": {
-        "operationId": "RegistrationController_getStatusByPhone",
-        "parameters": [
-          {
-            "name": "phoneNumber",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "countryCode",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Registration"
         ]
       }
     },
@@ -9608,6 +9631,50 @@
     "/api/v1/admin/reviews/{id}/flag": {
       "patch": {
         "operationId": "AdminReviewsController_flagReview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminReviews"
+        ]
+      }
+    },
+    "/api/v1/admin/reviews/{id}": {
+      "patch": {
+        "operationId": "AdminReviewsController_editReview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminReviews"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminReviewsController_deleteReview",
         "parameters": [
           {
             "name": "id",
@@ -13654,22 +13721,6 @@
         "type": "object",
         "properties": {}
       },
-      "ProcessRefundDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "RefundOrderDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "RequestCallDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "CreateStreamDto": {
-        "type": "object",
-        "properties": {}
-      },
       "RegisterSendOtpDto": {
         "type": "object",
         "properties": {
@@ -13800,6 +13851,22 @@
           "countryCode",
           "email"
         ]
+      },
+      "ProcessRefundDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RefundOrderDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RequestCallDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateStreamDto": {
+        "type": "object",
+        "properties": {}
       },
       "UpdateLalKitabSettingsDto": {
         "type": "object",
