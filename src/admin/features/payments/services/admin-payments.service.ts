@@ -363,8 +363,8 @@ export class AdminPaymentsService {
       throw new NotFoundException('Payout request not found');
     }
 
-    if (payout.status !== 'processing') {
-      throw new BadRequestException('Only processing payouts can be completed');
+    if (!['pending', 'approved', 'processing'].includes(payout.status)) {
+      throw new BadRequestException('Cannot complete this payout from its current status');
     }
 
     // ✅ Get astrologer to verify balance
@@ -387,8 +387,19 @@ export class AdminPaymentsService {
     }
 
     // ✅ Update payout status
+    const now = new Date();
     payout.status = 'completed';
-    payout.completedAt = new Date();
+    payout.completedAt = now;
+    
+    // Backfill skipped steps
+    if (!payout.approvedBy) {
+      payout.approvedBy = adminId as any;
+      payout.approvedAt = now;
+    }
+    if (!payout.processedAt) {
+      payout.processedAt = now;
+    }
+    
     payout.transactionReference = completeDto.transactionReference;
     if (completeDto.adminNotes) {
       payout.adminNotes = completeDto.adminNotes;

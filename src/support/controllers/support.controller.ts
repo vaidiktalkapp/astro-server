@@ -208,16 +208,21 @@ export class SupportController {
       throw new BadRequestException('Zoho Desk Auth Key not configured');
     }
 
+    const cleanPhone = (userContext.phoneNumber || '').replace(/[^a-zA-Z0-9]/g, '');
+    const dummyEmail = cleanPhone ? `user${cleanPhone}@vaidiktalk.com` : `user${Date.now()}@vaidiktalk.com`;
+    
+    const now = Math.floor(Date.now() / 1000);
+    
     const payload = {
-      email: userContext.email || `${userContext.phoneNumber}@vaidiktalk.com`,
+      email: userContext.email || dummyEmail,
       name: userContext.name || userContext.firstName || 'Vaidiktalk User',
+      iat: now - 60, // Backdate by 60s to prevent clock-drift "future token" errors
+      exp: now + 240, // 4 minutes in the future (must be < 10m total)
     };
 
     // Use HS256 for Native Zoho Desk Portal SDK (ASAP) and Web
-    // CRITICAL: Zoho Desk ASAP SDK requires the token expiry to be strictly LESS than 10 minutes.
     const token = jwt.sign(payload, secret, {
       algorithm: 'HS256',
-      expiresIn: '5m',
       jwtid: uuidv4(),
     });
 
