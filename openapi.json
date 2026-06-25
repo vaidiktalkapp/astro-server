@@ -5392,6 +5392,39 @@
         ]
       }
     },
+    "/api/v1/admin/astrologers/{astrologerId}/profile": {
+      "patch": {
+        "operationId": "AdminAstrologersController_updateProfile",
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAstrologerProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAstrologers"
+        ]
+      }
+    },
     "/api/v1/admin/astrologers/{astrologerId}/gallery": {
       "patch": {
         "operationId": "AdminAstrologersController_updateGallery",
@@ -11253,6 +11286,20 @@
         ]
       }
     },
+    "/api/v1/support/zoho-jwt": {
+      "get": {
+        "operationId": "SupportController_getZohoJwt",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Support"
+        ]
+      }
+    },
     "/api/v1/admin/support/tickets": {
       "get": {
         "operationId": "AdminSupportController_getAllTickets",
@@ -13505,7 +13552,47 @@
       },
       "UpdateAstrologerProfileDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Astrologer Name"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of Birth (ISO format)"
+          },
+          "gender": {
+            "type": "string",
+            "description": "Gender",
+            "enum": [
+              "male",
+              "female",
+              "other"
+            ]
+          },
+          "bio": {
+            "type": "string",
+            "description": "Short bio"
+          },
+          "experienceYears": {
+            "type": "number",
+            "description": "Years of Experience"
+          },
+          "languages": {
+            "description": "Languages known",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specializations": {
+            "description": "Specializations",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "UpdateWorkingHoursDto": {
         "type": "object",

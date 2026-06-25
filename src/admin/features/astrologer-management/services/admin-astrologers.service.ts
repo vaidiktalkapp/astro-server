@@ -9,7 +9,7 @@ import { NotificationService } from '../../../../notifications/services/notifica
 import { AdminActivityLogService } from '../../activity-logs/services/admin-activity-log.service';
 import { AstrologerFilter } from '../interfaces/astrologer-filter.interface';
 import { UpdatePricingDto } from '../dto/update-pricing.dto';
-
+import { UpdateAstrologerProfileDto } from '../dto/update-astrologer-profile.dto';
 
 @Injectable()
 export class AdminAstrologersService {
@@ -398,6 +398,59 @@ export class AdminAstrologersService {
       data: { bio: astrologer.bio },
     };
   }
+
+  /**
+   * Update full astrologer profile
+   */
+  async updateProfile(astrologerId: string, adminId: string, updateData: UpdateAstrologerProfileDto): Promise<any> {
+    const astrologer = await this.astrologerModel.findById(astrologerId);
+    if (!astrologer) {
+      throw new NotFoundException('Astrologer not found');
+    }
+
+    // Keep a record of old data for logging
+    const oldData = {
+      name: astrologer.name,
+      gender: astrologer.gender,
+      bio: astrologer.bio,
+      experienceYears: astrologer.experienceYears,
+      languages: astrologer.languages,
+      specializations: astrologer.specializations,
+      dateOfBirth: astrologer.dateOfBirth
+    };
+
+    // Update fields if provided
+    if (updateData.name !== undefined) astrologer.name = updateData.name;
+    if (updateData.gender !== undefined) astrologer.gender = updateData.gender;
+    if (updateData.bio !== undefined) astrologer.bio = updateData.bio;
+    if (updateData.experienceYears !== undefined) astrologer.experienceYears = updateData.experienceYears;
+    if (updateData.languages !== undefined) astrologer.languages = updateData.languages;
+    if (updateData.specializations !== undefined) astrologer.specializations = updateData.specializations;
+    if (updateData.dateOfBirth !== undefined) astrologer.dateOfBirth = new Date(updateData.dateOfBirth);
+
+    await astrologer.save();
+
+    // Log activity
+    await this.activityLogService.log({
+      adminId,
+      action: 'astrologer.profile_updated',
+      module: 'astrologers',
+      targetId: astrologerId,
+      targetType: 'Astrologer',
+      status: 'success',
+      changes: {
+        before: oldData,
+        after: updateData,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Profile updated successfully',
+      data: astrologer,
+    };
+  }
+
 
   /**
    * Update astrologer gallery images

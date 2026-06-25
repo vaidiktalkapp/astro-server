@@ -4,3 +4,4 @@ export * from './complete-interview.dto';
 export * from './shortlist.dto';
 export * from './reject-registration.dto';
 export * from './astrologer-query.dto';
+export * from './update-astrologer-profile.dto';

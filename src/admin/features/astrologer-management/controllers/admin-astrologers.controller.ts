@@ -22,7 +22,7 @@ import { Permissions } from '../../../core/config/permissions.config';
 
 import { AdminAstrologersService } from '../services/admin-astrologers.service';
 import { UpdatePricingDto } from '../dto/update-pricing.dto';
-
+import { UpdateAstrologerProfileDto } from '../dto/update-astrologer-profile.dto';
 import { AstrologerQueryDto } from '../dto/astrologer-query.dto';
 import { PenaltyService } from '../../../../astrologers/services/penalty.service';
 
@@ -158,6 +158,20 @@ export class AdminAstrologersController {
     @Body('bio') bio: string,
   ) {
     return this.adminAstrologersService.updateBio(astrologerId, admin._id, bio);
+  }
+
+  /**
+   * PATCH /admin/astrologers/:astrologerId/profile
+   * Update full astrologer profile
+   */
+  @Patch(':astrologerId/profile')
+  @RequirePermissions(Permissions.ASTROLOGERS_EDIT)
+  async updateProfile(
+    @Param('astrologerId') astrologerId: string,
+    @CurrentAdmin() admin: any,
+    @Body(ValidationPipe) updateData: UpdateAstrologerProfileDto,
+  ) {
+    return this.adminAstrologersService.updateProfile(astrologerId, admin._id, updateData);
   }
 
   /**

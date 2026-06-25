@@ -38,7 +38,7 @@ export class RatingReviewService {
     @InjectModel(AiAstrologerProfile.name) private aiProfileModel: Model<AiAstrologerProfileDocument>,
     @InjectModel(ChatSession.name) private chatSessionModel: Model<ChatSessionDocument>,
     @InjectModel(CallSession.name) private callSessionModel: Model<CallSessionDocument>,
-  ) {}
+  ) { }
 
   /**
    * ✅ ADD REVIEW (Create in separate Review collection)
@@ -52,20 +52,20 @@ export class RatingReviewService {
     }
 
     // Find the order (Primary: Order collection, Fallback: Chat/Call sessions for AI)
-    let order = await this.orderModel.findOne({ 
+    let order = await this.orderModel.findOne({
       $or: [{ orderId }, { conversationThreadId: orderId }],
-      userId: new Types.ObjectId(userId) 
+      userId: new Types.ObjectId(userId)
     }) as any;
-    
+
     let isVirtualOrder = false;
 
     if (!order) {
       console.log(`🔍 [RatingReviewService] Order ${orderId} not found in Order collection, checking sessions...`);
-      
+
       // Check ChatSession
-      const chatSession = await this.chatSessionModel.findOne({ 
+      const chatSession = await this.chatSessionModel.findOne({
         $or: [{ orderId }, { sessionId: orderId }],
-        userId: new Types.ObjectId(userId) 
+        userId: new Types.ObjectId(userId)
       });
 
       if (chatSession) {
@@ -73,9 +73,9 @@ export class RatingReviewService {
         isVirtualOrder = true;
       } else {
         // Check CallSession
-        const callSession = await this.callSessionModel.findOne({ 
+        const callSession = await this.callSessionModel.findOne({
           $or: [{ orderId }, { sessionId: orderId }],
-          userId: new Types.ObjectId(userId) 
+          userId: new Types.ObjectId(userId)
         });
         if (callSession) {
           order = callSession;
@@ -145,17 +145,17 @@ export class RatingReviewService {
       // Update order/session
       if (isVirtualOrder) {
         if (serviceType === 'chat') {
-           order.userSatisfactionRating = rating;
-           order.reviewGiven = true;
-           order.reviewGivenAt = new Date();
+          order.userSatisfactionRating = rating;
+          order.reviewGiven = true;
+          order.reviewGivenAt = new Date();
         } else {
-           // For CallSession
-           order.rating = rating;
-           order.review = reviewText;
-           order.reviewSubmitted = true;
-           order.reviewSubmittedAt = new Date();
+          // For CallSession
+          order.rating = rating;
+          order.review = reviewText;
+          order.reviewSubmitted = true;
+          order.reviewSubmittedAt = new Date();
         }
-        
+
         // Since order is a Mongoose document from either chatSessionModel or callSessionModel
         await order.save();
       } else {
@@ -172,7 +172,7 @@ export class RatingReviewService {
       });
 
       // Recalculate astrologer ratings
-      this.updateAstrologerRatings(astrologerId).catch(err => 
+      this.updateAstrologerRatings(astrologerId).catch(err =>
         console.error('Failed to update ratings:', err)
       );
 
@@ -264,112 +264,90 @@ export class RatingReviewService {
   /**
  * ✅ GET ASTROLOGER REVIEWS (Paginated with Privacy Settings)
  */
-async getAstrologerReviews(
-  astrologerId: string, 
-  page: number = 1, 
-  limit: number = 10,
-  includeAll: boolean = false
-): Promise<any> {
-  const skip = (page - 1) * limit;
+  async getAstrologerReviews(
+    astrologerId: string,
+    page: number = 1,
+    limit: number = 10,
+    includeAll: boolean = false
+  ): Promise<any> {
+    const skip = (page - 1) * limit;
 
-  const query: any = {
-    astrologerId: new Types.ObjectId(astrologerId),
-    isDeleted: false
-  };
+    const query: any = {
+      astrologerId: new Types.ObjectId(astrologerId),
+      isDeleted: false
+    };
 
-  // Public users only see approved
-  if (!includeAll) {
-    query.moderationStatus = 'approved';
-  }
-
-  const [reviews, totalReviews] = await Promise.all([
-    this.reviewModel
-      .find(query)
-      .populate({
-        path: 'userId',
-        select: 'name profileImage privacy.nameVisibleInReviews'
-      })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    this.reviewModel.countDocuments(query)
-  ]);
-
-  const formattedReviews = reviews.map(review => {
-    let userName = 'Anonymous';
-    let userProfileImage: string | null = null; // ✅ Fix: Declare correct type
-    let isNameHidden = false;
-
-    // ✅ Handle test data
-    if (review.isTestData) {
-      userName = review.testUserName || 'Test User';
-      userProfileImage = review.testUserImage || null;
-    } 
-    // ✅ Handle real user data with privacy settings
-    else if (review.userId) {
-      const user = review.userId as any;
-      
-      // Check if user wants their name visible in reviews
-      const showName = user?.privacy?.nameVisibleInReviews ?? false;
-      
-      if (showName && user?.name) {
-        // Show full name
-        userName = user.name;
-        userProfileImage = user.profileImage || null;
-      } else if (user?.name) {
-        // Hide name - show masked version
-        const nameParts = user.name.split(' ');
-        if (nameParts.length > 1) {
-          // e.g., "Rahul Kumar" -> "R***l K***r"
-          userName = nameParts.map(part => {
-            if (part.length <= 2) return part;
-            return part[0] + '*'.repeat(part.length - 2) + part[part.length - 1];
-          }).join(' ');
-        } else {
-          // e.g., "Rahul" -> "R***l"
-          const name = nameParts[0];
-          if (name.length <= 2) {
-            userName = name;
-          } else {
-            userName = name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
-          }
-        }
-        userProfileImage = null; // Don't show profile image if name is hidden
-        isNameHidden = true;
-      }
+    // Public users only see approved
+    if (!includeAll) {
+      query.moderationStatus = 'approved';
     }
+
+    const [reviews, totalReviews] = await Promise.all([
+      this.reviewModel
+        .find(query)
+        .populate({
+          path: 'userId',
+          select: 'name profileImage privacy.nameVisibleInReviews'
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      this.reviewModel.countDocuments(query)
+    ]);
+
+    const formattedReviews = reviews.map(review => {
+      let userName = 'Anonymous';
+      let userProfileImage: string | null = null; // ✅ Fix: Declare correct type
+      let isNameHidden = false;
+
+      // ✅ Handle test data
+      if (review.isTestData) {
+        userName = review.testUserName || 'Test User';
+        userProfileImage = review.testUserImage || null;
+      }
+      // ✅ Handle real user data with privacy settings
+      else if (review.userId) {
+        const user = review.userId as any;
+
+        if (user?.name) {
+          // Show full name unconditionally
+          userName = user.name;
+          userProfileImage = user.profileImage || null;
+          isNameHidden = false;
+        }
+      }
+
+      return {
+        reviewId: review.reviewId,
+        orderId: review.orderId,
+        userName,
+        userProfileImage,
+        isNameHidden,
+        rating: review.rating,
+        reviewText: review.reviewText,
+        serviceType: review.serviceType,
+        duration: review.sessionDuration,
+        reviewDate: review.createdAt,
+        isEdited: review.isEdited,
+        editedAt: review.editedAt,
+        isTestData: review.isTestData || false,
+      };
+    });
+
+    const totalPages = Math.ceil(totalReviews / limit);
 
     return {
-      reviewId: review.reviewId,
-      orderId: review.orderId,
-      userName,
-      userProfileImage,
-      isNameHidden,
-      rating: review.rating,
-      reviewText: review.reviewText,
-      serviceType: review.serviceType,
-      duration: review.sessionDuration,
-      reviewDate: review.createdAt,
-      isEdited: review.isEdited,
-      editedAt: review.editedAt,
-      isTestData: review.isTestData || false,
+      reviews: formattedReviews,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalReviews,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
     };
-  });
-
-  const totalPages = Math.ceil(totalReviews / limit);
-
-  return {
-    reviews: formattedReviews,
-    pagination: {
-      currentPage: page,
-      totalPages,
-      totalReviews,
-      hasNextPage: page < totalPages,
-      hasPrevPage: page > 1
-    }
-  };
-}
+  }
 
   /**
    * ✅ GET REVIEW STATS
@@ -388,7 +366,7 @@ async getAstrologerReviews(
 
     if (isAi) {
       const ai = astrologer as any;
-      
+
       // Calculate real breakdown for AI
       const reviews = await this.reviewModel.find({
         astrologerId: new Types.ObjectId(astrologerId),
@@ -489,7 +467,7 @@ async getAstrologerReviews(
 
       for (const testReview of testReviews) {
         const reviewId = `TEST_REV_${Date.now()}_${Math.random().toString(36).substring(7).toUpperCase()}`;
-        
+
         const review = new this.reviewModel({
           reviewId,
           // ✅ Use your real user ID for testing privacy settings
@@ -559,8 +537,8 @@ async getAstrologerReviews(
     userId: string,
     updates: { rating?: number; reviewText?: string }
   ): Promise<any> {
-    const review = await this.reviewModel.findOne({ 
-      reviewId, 
+    const review = await this.reviewModel.findOne({
+      reviewId,
       userId: new Types.ObjectId(userId)
     });
 
@@ -597,8 +575,8 @@ async getAstrologerReviews(
    * ✅ DELETE REVIEW
    */
   async deleteReview(reviewId: string, userId: string): Promise<any> {
-    const review = await this.reviewModel.findOne({ 
-      reviewId, 
+    const review = await this.reviewModel.findOne({
+      reviewId,
       userId: new Types.ObjectId(userId)
     });
 
@@ -612,11 +590,11 @@ async getAstrologerReviews(
 
     await this.orderModel.updateOne(
       { orderId: review.orderId },
-      { 
-        $set: { 
+      {
+        $set: {
           reviewGiven: false,
           reviewId: null
-        } 
+        }
       }
     );
 
