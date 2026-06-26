@@ -219,13 +219,13 @@ export class SupportController {
       email: userContext.email || syntheticEmail,
       name: userContext.name || userContext.firstName || 'Vaidiktalk User',
       iat: now - 60, // Backdate by 60s
+      nbf: now - 60, // Not before (added for strict Zoho SDK compliance)
       exp: now + 540, // 9 minutes in the future (max allowed is 10m)
     };
 
     // Use HS256 for Native Zoho Desk Portal SDK (ASAP)
     const token = jwt.sign(payload, secret, {
       algorithm: 'HS256',
-      jwtid: uuidv4(),
     });
 
     return { success: true, jwt: token };
