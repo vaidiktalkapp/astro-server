@@ -272,6 +272,13 @@ export class AdminAiAstrologersService {
         } else if (todaySessions > 0) {
             growthRate = 100;
         }
+        
+        const avgChatDur = chatDurationStats[0]?.avgDuration || 0;
+        const avgCallDur = callDurationStats[0]?.avgDuration || 0;
+        let averageSessionDuration = 0;
+        if (totalSessions > 0) {
+            averageSessionDuration = Math.round(((avgChatDur * totalChatSessions) + (avgCallDur * totalCallSessions)) / totalSessions);
+        }
 
         return {
             totalAI,
@@ -282,8 +289,9 @@ export class AdminAiAstrologersService {
             totalRevenue,
             chatRevenue,
             callRevenue,
-            averageChatDuration: Math.round(chatDurationStats[0]?.avgDuration || 0),
-            averageCallDuration: Math.round(callDurationStats[0]?.avgDuration || 0),
+            averageChatDuration: Math.round(avgChatDur),
+            averageCallDuration: Math.round(avgCallDur),
+            averageSessionDuration,
             totalUsers: new Set([...uniqueChatUsers.map(u => u.toString()), ...uniqueCallUsers.map(u => u.toString())]).size,
             growthRate: parseFloat(growthRate.toFixed(1))
         };
