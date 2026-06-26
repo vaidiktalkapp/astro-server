@@ -94,14 +94,14 @@ export class ZohoDeskService {
 
   // ---------- CONTACT HELPERS (synthetic email) ----------
 
-private buildSyntheticEmail(name: string, phone: string): string {
-  const safePhone = (phone || '').replace(/\D/g, '');
-  const localPart =
-    (name || 'user')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '') || 'user';
-  return `${localPart}.${safePhone}@support-vaidiktalk.local`;
-}
+  public buildSyntheticEmail(name: string, phone: string): string {
+    const safePhone = (phone || '').replace(/\D/g, '');
+    const localPart =
+      (name || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '') || 'user';
+    return `${localPart}.${safePhone}@vaidiktalk.com`;
+  }
 
 /**
  * Raw contacts list (no params, since your API rejects them)

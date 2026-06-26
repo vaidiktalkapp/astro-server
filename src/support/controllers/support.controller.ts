@@ -208,13 +208,15 @@ export class SupportController {
       throw new BadRequestException('Zoho Desk Auth Key not configured');
     }
 
-    const cleanPhone = (userContext.phoneNumber || '').replace(/[^a-zA-Z0-9]/g, '');
-    const dummyEmail = cleanPhone ? `user${cleanPhone}@vaidiktalk.com` : `user${Date.now()}@vaidiktalk.com`;
+    const syntheticEmail = this.zohoDeskService.buildSyntheticEmail(
+      userContext.name || userContext.firstName,
+      userContext.phoneNumber
+    );
     
     const now = Math.floor(Date.now() / 1000);
     
     const payload = {
-      email: userContext.email || dummyEmail,
+      email: userContext.email || syntheticEmail,
       name: userContext.name || userContext.firstName || 'Vaidiktalk User',
       iat: now - 60, // Backdate by 60s
       exp: now + 540, // 9 minutes in the future (max allowed is 10m)
