@@ -405,6 +405,7 @@ export class ChatController {
 
         currentSessionId: order.data.currentSessionId,
         currentSessionType: order.data.currentSessionType,
+        currentSessionStatus: order.data.currentSessionId ? (await this.chatSessionService.getSession(order.data.currentSessionId))?.status : null,
         totalSessions: order.data.totalSessions,
         totalChatSessions: order.data.totalChatSessions,
         totalCallSessions: order.data.totalCallSessions,
