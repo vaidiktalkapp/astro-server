@@ -501,11 +501,27 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                 yogas.forEach(y => context += `- ${y.name}: ${y.description}\n`);
             }
         } else if (expertise === 'Numerology') {
-            // ✅ Kept from Doc2 — Numerology-specific Life Path calculation block
             const dob = astroData.dob || astroData.dateOfBirth || '';
+            const name = astroData.name || '';
+            
             const lifePath = this.calculateLifePath(dob);
-            context += `Subject's Life Path Number: ${lifePath}\n`;
-            context += `Note: Focus strictly on Numerology interpretation (Pythagorean or Chaldean). Provide guidance based on Life Path, Destiny, and Personal Year cycles.\n`;
+            const moolank = this.calculateMoolank(dob);
+            const destinyNumber = this.calculateDestinyNumber(name);
+            const soulUrgeNumber = this.calculateSoulUrgeNumber(name);
+            const personalityNumber = this.calculatePersonalityNumber(name);
+            const loveAttitudeNumber = this.calculateLoveAttitudeNumber(dob);
+            const currentYear = new Date().getFullYear();
+            const personalYear = this.calculatePersonalYear(dob, currentYear);
+            
+            context += `Subject's Core Numerology Data:\n`;
+            context += `- Life Path Number (Bhagyank): ${lifePath}\n`;
+            context += `- Radical/Birth Number (Moolank): ${moolank}\n`;
+            context += `- Destiny/Expression Number (Namank): ${destinyNumber}\n`;
+            context += `- Soul Urge/Heart's Desire Number: ${soulUrgeNumber}\n`;
+            context += `- Personality Number: ${personalityNumber}\n`;
+            context += `- Love/Attitude Number: ${loveAttitudeNumber}\n`;
+            context += `- Current Personal Year (${currentYear}): ${personalYear}\n`;
+            context += `Note: Focus strictly on Numerology interpretation (Pythagorean or Chaldean). Provide guidance based on Life Path, Destiny, Personal Year, and other core vibrations. The LLM MUST NOT attempt to recalculate these numbers, they are already accurate.\n`;
         } else {
             context += `Subject's Sun Sign: ${kundli.planets?.Sun?.sign || 'Unknown'}\n`;
             context += `Subject's Moon Sign: ${kundli.planets?.Moon?.sign || 'Unknown'}\n`;
@@ -611,6 +627,92 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
         };
 
         return reduce(sum);
+    }
+
+    private reduceNumerology(n: number, keepMaster: boolean = false): number {
+        if (n <= 9 || (keepMaster && (n === 11 || n === 22 || n === 33))) return n;
+        const s = n.toString().split('').reduce((acc, d) => acc + parseInt(d, 10), 0);
+        return this.reduceNumerology(s, keepMaster);
+    }
+
+    private getChaldeanValue(char: string): number {
+        const c = char.toUpperCase();
+        if (['A', 'I', 'J', 'Q', 'Y'].includes(c)) return 1;
+        if (['B', 'K', 'R'].includes(c)) return 2;
+        if (['C', 'G', 'L', 'S'].includes(c)) return 3;
+        if (['D', 'M', 'T'].includes(c)) return 4;
+        if (['E', 'H', 'N', 'X'].includes(c)) return 5;
+        if (['U', 'V', 'W'].includes(c)) return 6;
+        if (['O', 'Z'].includes(c)) return 7;
+        if (['F', 'P'].includes(c)) return 8;
+        return 0;
+    }
+
+    private calculateMoolank(dob: string): number {
+        if (!dob) return 0;
+        const parts = dob.split(/[-/]/);
+        let dayPart = parts[0];
+        if (parts.length >= 3) {
+            if (parts[0].length === 4) dayPart = parts[2]; // YYYY-MM-DD
+            else dayPart = parts[0]; // DD-MM-YYYY
+        }
+        const daySum = dayPart.replace(/[^0-9]/g, '').split('').reduce((a, b) => a + parseInt(b, 10), 0);
+        return this.reduceNumerology(daySum, false);
+    }
+
+    private calculateDestinyNumber(name: string): number {
+        if (!name) return 0;
+        let sum = 0;
+        for (const char of name) sum += this.getChaldeanValue(char);
+        return this.reduceNumerology(sum, true);
+    }
+
+    private calculateSoulUrgeNumber(name: string): number {
+        if (!name) return 0;
+        const vowels = ['A', 'E', 'I', 'O', 'U'];
+        let sum = 0;
+        for (const char of name) {
+            if (vowels.includes(char.toUpperCase())) sum += this.getChaldeanValue(char);
+        }
+        return this.reduceNumerology(sum, true);
+    }
+
+    private calculatePersonalityNumber(name: string): number {
+        if (!name) return 0;
+        const vowels = ['A', 'E', 'I', 'O', 'U'];
+        let sum = 0;
+        for (const char of name) {
+            if (char.match(/[a-zA-Z]/) && !vowels.includes(char.toUpperCase())) {
+                sum += this.getChaldeanValue(char);
+            }
+        }
+        return this.reduceNumerology(sum, true);
+    }
+
+    private calculateLoveAttitudeNumber(dob: string): number {
+        if (!dob) return 0;
+        const parts = dob.split(/[-/]/);
+        let day = '', month = '';
+        if (parts.length >= 3) {
+            if (parts[0].length === 4) { month = parts[1]; day = parts[2]; }
+            else { day = parts[0]; month = parts[1]; }
+        }
+        const str = (day + month).replace(/[^0-9]/g, '');
+        const sum = str.split('').reduce((a, b) => a + parseInt(b, 10), 0);
+        return this.reduceNumerology(sum, false);
+    }
+
+    private calculatePersonalYear(dob: string, currentYear: number): number {
+        if (!dob) return 0;
+        const parts = dob.split(/[-/]/);
+        let day = '', month = '';
+        if (parts.length >= 3) {
+            if (parts[0].length === 4) { month = parts[1]; day = parts[2]; }
+            else { day = parts[0]; month = parts[1]; }
+        }
+        const str = (day + month + currentYear.toString()).replace(/[^0-9]/g, '');
+        const sum = str.split('').reduce((a, b) => a + parseInt(b, 10), 0);
+        return this.reduceNumerology(sum, false);
     }
 
     private getOpenAIMessages(systemPrompt: string, astroContext: string, conversationHistory: any[]) {
