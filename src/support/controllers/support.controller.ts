@@ -203,9 +203,10 @@ export class SupportController {
     }
 
     const secret = this.configService.get<string>('ZOHO_DESK_SECRET');
+    const asapAppId = this.configService.get<string>('ZOHO_ASAP_APP_ID');
 
-    if (!secret) {
-      throw new BadRequestException('Zoho Desk Auth Key not configured');
+    if (!secret || !asapAppId) {
+      throw new BadRequestException('Zoho Desk Auth Key or App ID not configured');
     }
 
     const syntheticEmail = this.zohoDeskService.buildSyntheticEmail(
@@ -216,10 +217,11 @@ export class SupportController {
     const now = Math.floor(Date.now() / 1000);
     
     const payload = {
+      iss: asapAppId,
       email: userContext.email || syntheticEmail,
       name: userContext.name || userContext.firstName || 'Vaidiktalk User',
+      email_verified: true,
       iat: now - 60, // Backdate by 60s
-      nbf: now - 60, // Not before (added for strict Zoho SDK compliance)
       exp: now + 540, // 9 minutes in the future (max allowed is 10m)
     };
 
