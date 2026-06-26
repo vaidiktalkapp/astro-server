@@ -516,8 +516,13 @@ ${previousTranscriptContext}
              finalDuration = Math.floor((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000);
              targetSession.duration = finalDuration > 0 ? finalDuration : 0;
           } else if (!finalDuration && durationFromPayload) {
-             finalDuration = durationFromPayload;
-             targetSession.duration = finalDuration;
+             // Vapi sometimes sends call.duration in minutes
+             if (durationFromPayload < 60 && !Number.isInteger(durationFromPayload)) {
+                 finalDuration = Math.floor(durationFromPayload * 60);
+             } else {
+                 finalDuration = Math.floor(durationFromPayload);
+             }
+             targetSession.duration = finalDuration > 0 ? finalDuration : 0;
           }
 
           await targetSession.save();
@@ -537,10 +542,17 @@ ${previousTranscriptContext}
         // If not ended yet, end it now via the service
         const start = new Date(startedAt || targetSession.startTime);
         const end = new Date(endedAt || new Date());
-        // Use payload duration if available
+        // Use timestamps as primary source for exact duration
         let durationSeconds = 0;
-        if (typeof durationFromPayload === 'number' && durationFromPayload >= 0) {
-          durationSeconds = Math.floor(durationFromPayload);
+        if (startedAt && endedAt) {
+          durationSeconds = Math.floor((end.getTime() - start.getTime()) / 1000);
+        } else if (typeof durationFromPayload === 'number' && durationFromPayload >= 0) {
+          // Vapi sometimes sends call.duration in minutes
+          if (durationFromPayload < 60 && !Number.isInteger(durationFromPayload)) {
+              durationSeconds = Math.floor(durationFromPayload * 60);
+          } else {
+              durationSeconds = Math.floor(durationFromPayload);
+          }
         } else {
           durationSeconds = Math.floor((end.getTime() - start.getTime()) / 1000);
         }
