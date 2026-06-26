@@ -618,7 +618,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const messageContent = data.content || data.message || '';
-      if (!messageContent.trim()) {
+      const hasMedia = data.fileUrl || data.mediaUrl || data.url;
+      if (!messageContent.trim() && !hasMedia) {
         this.logger.error('❌ Empty message content');
         return { success: false, message: 'Message content is required' };
       }
