@@ -216,11 +216,11 @@ export class SupportController {
     const payload = {
       email: userContext.email || dummyEmail,
       name: userContext.name || userContext.firstName || 'Vaidiktalk User',
-      iat: now - 60, // Backdate by 60s to prevent clock-drift "future token" errors
-      exp: now + 240, // 4 minutes in the future (must be < 10m total)
+      iat: now - 60, // Backdate by 60s
+      exp: now + 540, // 9 minutes in the future (max allowed is 10m)
     };
 
-    // Use HS256 for Native Zoho Desk Portal SDK (ASAP) and Web
+    // Use HS256 for Native Zoho Desk Portal SDK (ASAP)
     const token = jwt.sign(payload, secret, {
       algorithm: 'HS256',
       jwtid: uuidv4(),
