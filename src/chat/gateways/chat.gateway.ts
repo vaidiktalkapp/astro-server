@@ -702,6 +702,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         fileUrl: data.fileUrl,
         fileDuration: data.fileDuration,
         fileName: data.fileName,
+        fileSize: data.fileSize,
+        mimeType: data.mimeType,
       });
 
       // ✅ CRITICAL: Check who's in the room
@@ -747,6 +749,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content: message.content,
         message: message.content,
         fileUrl: message.fileUrl,
+        fileName: message.fileName,
+        fileSize: message.fileSize,
+        mimeType: message.mimeType,
         fileDuration: message.fileDuration,
         deliveryStatus: 'sent',
         sentAt: message.sentAt,
