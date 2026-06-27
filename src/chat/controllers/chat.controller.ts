@@ -287,7 +287,15 @@ export class ChatController {
               placeOfBirth: intakeProfile?.placeOfBirth || user?.placeOfBirth,
               // relation: intakeProfile?.relation || ''
             },
-            privacy: user?.privacy || {}
+            privacy: {
+              ...(user?.privacy || {}),
+              restrictions: {
+                ...(user?.privacy?.restrictions || {}),
+                astrologerChatAccessAfterEnd: order.isActive ? true : user?.privacy?.restrictions?.astrologerChatAccessAfterEnd,
+                accessCallRecording: order.isActive ? true : user?.privacy?.restrictions?.accessCallRecording,
+                downloadSharedImages: order.isActive ? true : user?.privacy?.restrictions?.downloadSharedImages
+              }
+            }
           },
           profile: intakeProfile ? {
             name: intakeProfile.name,
@@ -364,7 +372,15 @@ export class ChatController {
             _id: user?._id,
             name: user?.name,
             profilePicture: user?.profilePicture,
-            privacy: user?.privacy || {}
+            privacy: {
+              ...(user?.privacy || {}),
+              restrictions: {
+                ...(user?.privacy?.restrictions || {}),
+                astrologerChatAccessAfterEnd: order.isActive ? true : user?.privacy?.restrictions?.astrologerChatAccessAfterEnd,
+                accessCallRecording: order.isActive ? true : user?.privacy?.restrictions?.accessCallRecording,
+                downloadSharedImages: order.isActive ? true : user?.privacy?.restrictions?.downloadSharedImages
+              }
+            }
           }
         }
       }
