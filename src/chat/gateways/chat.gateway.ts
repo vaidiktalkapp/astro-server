@@ -749,6 +749,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content: message.content,
         message: message.content,
         fileUrl: message.fileUrl,
+        mediaUrl: message.fileUrl,
+        url: message.fileUrl,
         fileName: message.fileName,
         fileSize: message.fileSize,
         mimeType: message.mimeType,
