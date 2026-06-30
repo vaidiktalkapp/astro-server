@@ -35,15 +35,15 @@ export class AiChatSessionService implements OnModuleInit {
     ) { }
 
     /**
-     * Periodic cleanup for stale AI sessions (every 5 minutes)
+     * Periodic cleanup for stale AI sessions (every  minutes)
      * Ends sessions that have been active for too long or have no recent activity.
      */
-    @Cron(CronExpression.EVERY_5_MINUTES)
+    @Cron(CronExpression.EVERY_MINUTE)
     async cleanupStaleSessions() {
         this.logger.log('🧹 [AiChatSessionService] Running stale session cleanup...');
 
         try {
-            const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes of inactivity
+            const STALE_THRESHOLD_MS = 1 * 60 * 1000; // 1 minute of inactivity
             const now = new Date();
 
             // Find all active AI sessions
@@ -89,6 +89,25 @@ export class AiChatSessionService implements OnModuleInit {
         // 1. Validate IDs
         const validUserId = new Types.ObjectId(userId);
         const validAstrologerId = new Types.ObjectId(dto.astrologerId);
+
+        // 1.5 PREVENT CONCURRENT SESSIONS: Block if user has any active chat or call
+        const [existingChat, existingCall] = await Promise.all([
+            this.chatSessionModel.findOne({
+                userId: validUserId,
+                status: { $in: ['initiated', 'ringing', 'waiting', 'waiting_in_queue', 'active'] }
+            }),
+            this.callSessionModel.findOne({
+                userId: validUserId,
+                status: { $in: ['initiated', 'ringing', 'waiting', 'waiting_in_queue', 'active'] }
+            })
+        ]);
+
+        if (existingChat) {
+            throw new BadRequestException('You already have an active chat session. Please end it first.');
+        }
+        if (existingCall) {
+            throw new BadRequestException('You already have an active call session. Please end it first.');
+        }
 
         // 2. Fetch AI profile and User for rate and balance
         const [aiProfile, user] = await Promise.all([
@@ -292,9 +311,11 @@ export class AiChatSessionService implements OnModuleInit {
             const session = await this.chatSessionModel.findOne({ sessionId });
             if (!session || session.status === 'ended') return session;
 
-            // Calculate duration
+            // Calculate duration based on ACTUAL activity, not wall clock time
+            // Use lastMessageAt to determine when user actually stopped chatting
             const startTime = session.startTime || session.createdAt;
-            const durationSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+            const endTimeForBilling = session.lastMessageAt || new Date();
+            const durationSeconds = Math.floor((endTimeForBilling.getTime() - startTime.getTime()) / 1000);
             const finalDuration = Math.max(durationSeconds, 1);
 
             // Fetch astrologer data for rate

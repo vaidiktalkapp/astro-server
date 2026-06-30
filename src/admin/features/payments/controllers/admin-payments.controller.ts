@@ -317,6 +317,8 @@ export class AdminPaymentsController {
       defaultPlatformCommissionRate?: number;
       isAiFirstCallFreeEnabled?: boolean;
       aiFirstCallFreeDurationMinutes?: number;
+      // isWelcomeWhatsAppEnabled?: boolean;
+      // welcomeWhatsAppText?: string;
     },
   ) {
     return this.adminPaymentsService.updateCommissionSettings(body);

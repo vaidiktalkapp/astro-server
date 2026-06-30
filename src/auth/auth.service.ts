@@ -11,6 +11,7 @@ import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { SystemSettings, SystemSettingsDocument } from '../payments/schemas/system-settings.schema';
 import { OtpService } from './services/otp/otp.service';
 import { TruecallerService } from './services/truecaller.service';
 import { JwtAuthService, TokenPair } from './services/jwt-auth/jwt-auth.service';
@@ -38,6 +39,7 @@ export class AuthService {
 
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(SystemSettings.name) private systemSettingsModel: Model<SystemSettingsDocument>,
     private otpService: OtpService,
     private jwtAuthService: JwtAuthService,
     private truecallerService: TruecallerService,
@@ -353,6 +355,19 @@ export class AuthService {
         }
       };
 
+      if (isNewUser) {
+        // Asynchronously check settings and send WhatsApp welcome message (COMMENTED FOR NOW)
+        /*
+        this.systemSettingsModel.findOne().then(settings => {
+          if (settings && settings.isWelcomeWhatsAppEnabled && settings.welcomeWhatsAppText) {
+            this.otpService.sendWhatsAppMessage(phoneNumber, countryCode, settings.welcomeWhatsAppText).catch(e => 
+              this.logger.error('Failed to send welcome WhatsApp message:', e)
+            );
+          }
+        }).catch(e => this.logger.error('Failed to fetch settings for WhatsApp message:', e));
+        */
+      }
+
       this.logger.log('✅ AUTH SERVICE: OTP verification completed');
       return result;
 
@@ -509,6 +524,19 @@ export class AuthService {
       }
 
       this.logger.log('✅ Truecaller authentication successful');
+
+      if (isNewUser) {
+        // Asynchronously check settings and send WhatsApp welcome message (COMMENTED FOR NOW)
+        /*
+        this.systemSettingsModel.findOne().then(settings => {
+          if (settings && settings.isWelcomeWhatsAppEnabled && settings.welcomeWhatsAppText) {
+            this.otpService.sendWhatsAppMessage(phoneNumber, countryCode, settings.welcomeWhatsAppText).catch(e => 
+              this.logger.error('Failed to send welcome WhatsApp message:', e)
+            );
+          }
+        }).catch(e => this.logger.error('Failed to fetch settings for WhatsApp message:', e));
+        */
+      }
 
       return {
         success: true,

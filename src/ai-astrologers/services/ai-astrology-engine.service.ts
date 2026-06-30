@@ -503,7 +503,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
         } else if (expertise === 'Numerology') {
             const dob = astroData.dob || astroData.dateOfBirth || '';
             const name = astroData.name || '';
-            
+
             const lifePath = this.calculateLifePath(dob);
             const moolank = this.calculateMoolank(dob);
             const destinyNumber = this.calculateDestinyNumber(name);
@@ -512,7 +512,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
             const loveAttitudeNumber = this.calculateLoveAttitudeNumber(dob);
             const currentYear = new Date().getFullYear();
             const personalYear = this.calculatePersonalYear(dob, currentYear);
-            
+
             context += `Subject's Core Numerology Data:\n`;
             context += `- Life Path Number (Bhagyank): ${lifePath}\n`;
             context += `- Radical/Birth Number (Moolank): ${moolank}\n`;

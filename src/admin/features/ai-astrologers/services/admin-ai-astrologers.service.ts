@@ -118,6 +118,12 @@ export class AdminAiAstrologersService {
             displayName: obj.name,
             totalOrders: obj.totalSessions || 0,
             totalEarnings: obj.totalRevenue || 0,
+            stats: {
+                totalSessions: obj.totalSessions || 0
+            },
+            ratings: {
+                average: obj.rating || obj.satisfactionScore || 4.5
+            },
             gender: obj.gender || 'male',
             voiceProvider: obj.voiceProvider || 'vapi',
             voiceId: obj.voiceId || 'pMSpe79Vf0vVp3n37rV6'
@@ -433,7 +439,7 @@ export class AdminAiAstrologersService {
             duration: Math.round((log.duration || 0) / 60),
             messages: log.messageCount || 0,
             rating: log.userSatisfactionRating,
-            earnings: log.totalCost || 0,
+            earnings: log.totalCost || log.totalAmount || 0,
             resolution: log.status === 'ended' ? 'resolved' : log.status,
             auditStatus: log.auditStatus || 'pending',
             createdAt: log.createdAt

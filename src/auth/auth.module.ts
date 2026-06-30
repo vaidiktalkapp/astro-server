@@ -21,6 +21,7 @@ import { AstrologerAuthController } from './controllers/astrologer-auth.controll
 // Import User schema
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Astrologer, AstrologerSchema } from '../astrologers/schemas/astrologer.schema';
+import { SystemSettings, SystemSettingsSchema } from '../payments/schemas/system-settings.schema';
 
 
 @Module({
@@ -47,7 +48,8 @@ import { Astrologer, AstrologerSchema } from '../astrologers/schemas/astrologer.
 
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
-      { name: Astrologer.name, schema: AstrologerSchema }
+      { name: Astrologer.name, schema: AstrologerSchema },
+      { name: SystemSettings.name, schema: SystemSettingsSchema }
     ]),
   ],
   controllers: [

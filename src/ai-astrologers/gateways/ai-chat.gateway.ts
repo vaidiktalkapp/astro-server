@@ -64,7 +64,7 @@ export class AiChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         const sessionId = this.socketToSession.get(client.id);
         if (sessionId) {
-            this.logger.log(`Session ${sessionId} marked for auto-end if user doesn't reconnect in 5s`);
+            this.logger.log(`Session ${sessionId} marked for auto-end if user doesn't reconnect in 60s`);
 
             if (this.disconnectTimers.has(sessionId)) {
                 clearTimeout(this.disconnectTimers.get(sessionId));
@@ -82,7 +82,7 @@ export class AiChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 } catch (e) {
                     this.logger.error(`Failed to auto-end session ${sessionId}:`, e);
                 }
-            }, 5000);
+            }, 60000); // 1 minute grace period for reconnection
 
             this.disconnectTimers.set(sessionId, timer);
             this.socketToSession.delete(client.id);
@@ -421,11 +421,29 @@ export class AiChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         const sessionId = data.sessionId;
         if (!sessionId) return { success: false, message: 'Missing sessionId' };
+
+        try {
+            // Actually end the session when user leaves the chat window
+            const session = await this.aiChatSessionService.endSession(sessionId, data.userId, 'user_left');
+            if (session) {
+                this.stopTimerTicker(sessionId);
+                this.notifySessionEnded(session, 'user_left');
+            }
+        } catch (e) {
+            this.logger.error(`Failed to end session on leave: ${e.message}`);
+        }
+
         client.leave(sessionId);
         this.activeUsers.delete(data.userId);
         this.socketToSession.delete(client.id);
-        this.stopTimerTicker(sessionId);
-        return { success: true, message: 'Left AI chat session' };
+
+        // Clear any pending disconnect timer since we already ended the session
+        if (this.disconnectTimers.has(sessionId)) {
+            clearTimeout(this.disconnectTimers.get(sessionId));
+            this.disconnectTimers.delete(sessionId);
+        }
+
+        return { success: true, message: 'Left and ended AI chat session' };
     }
 
     @SubscribeMessage('end_ai_chat')

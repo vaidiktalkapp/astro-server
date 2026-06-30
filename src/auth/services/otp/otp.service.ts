@@ -22,6 +22,7 @@ export class TooManyRequestsException extends HttpException {
 export class OtpService {
   private readonly logger = new Logger(OtpService.name);
   private readonly VEPAAR_API_URL = 'https://api.vepaar.com/api/v1/send-otp';
+  private readonly VEPAAR_MESSAGE_API_URL = 'https://api.vepaar.com/api/v1/send-message';
 
   // 🧪 Test ACCOUNT CREDENTIALS
   private readonly DEMO_PHONES = ['9873211086', '7878787878'];
@@ -205,6 +206,48 @@ export class OtpService {
         otpLength: otp.length
       });
 
+      return false;
+    }
+  }
+
+  // Send Custom WhatsApp Message via Vepaar API
+  async sendWhatsAppMessage(
+    phoneNumber: string,
+    countryCode: string,
+    messageText: string
+  ): Promise<boolean> {
+    try {
+      const cleanPhone = this.normalizePhoneNumber(phoneNumber, countryCode);
+      const mobileNumberWithCallingCode = `${countryCode}${cleanPhone}`;
+
+      this.logger.log(`📞 Sending WhatsApp Message to ${mobileNumberWithCallingCode} via Vepaar API`);
+
+      const formData = new FormData();
+      formData.append('otp', messageText);
+      formData.append('mobileNumberWithCallingCode', mobileNumberWithCallingCode);
+
+      // We use VEPAAR_API_URL (send-otp) because send-message is not available
+      const response = await axios.post(this.VEPAAR_API_URL, formData, {
+        headers: {
+          ...formData.getHeaders(),
+        },
+        timeout: 30000, 
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        this.logger.log(`✅ WhatsApp Message sent successfully to ${mobileNumberWithCallingCode}`);
+        return true;
+      } else {
+        this.logger.error(`❌ Vepaar API Message returned status: ${response.status}`);
+        return false;
+      }
+
+    } catch (error: any) {
+      this.logger.error('❌ Vepaar Message API Error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
       return false;
     }
   }
