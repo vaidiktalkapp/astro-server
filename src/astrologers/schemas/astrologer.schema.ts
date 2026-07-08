@@ -13,6 +13,9 @@ export class Astrologer {
   @Prop({ required: true })
   name: string;
 
+  @Prop({ type: String, unique: true, sparse: true, index: true })
+  slug?: string;
+
   @Prop({ required: true, unique: true })
   phoneNumber: string;
 
@@ -428,3 +431,22 @@ AstrologerSchema.index({ tier: 1, 'ratings.average': -1 });
 AstrologerSchema.index({ tier: 1, isOnline: 1 });
 AstrologerSchema.index({ 'penalties.penaltyId': 1 }, { sparse: true });
 AstrologerSchema.index({ 'penalties.status': 1 });
+
+// ✅ Auto-generate unique slug before save (Only once, permanent)
+AstrologerSchema.pre('save', async function (next) {
+  if (!this.slug && this.name) {
+    const baseSlug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    let slug = baseSlug;
+    let counter = 1;
+    
+    const model = this.constructor as any;
+    // Check if slug exists for OTHER astrologers
+    while (await model.findOne({ slug, _id: { $ne: this._id } })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
+    this.slug = slug;
+  }
+  next();
+});

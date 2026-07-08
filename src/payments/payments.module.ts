@@ -13,6 +13,7 @@ import { WalletTransaction, WalletTransactionSchema } from './schemas/wallet-tra
 import { PayoutRequest, PayoutRequestSchema } from './schemas/payout-request.schema';
 import { WalletRefundRequest, WalletRefundRequestSchema } from './schemas/wallet-refund-request.schema'; // ADD THIS
 import { GiftCard, GiftCardSchema } from './schemas/gift-card.schema'; // ADD THIS
+import { PromotionClaim, PromotionClaimSchema } from './schemas/promotion-claim.schema';
 import { SystemSettings, SystemSettingsSchema } from './schemas/system-settings.schema';
 import { StreamSession, StreamSessionSchema } from '../streaming/schemas/stream-session.schema';
 import { UsersModule } from '../users/users.module';
@@ -33,6 +34,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: PayoutRequest.name, schema: PayoutRequestSchema },
       { name: WalletRefundRequest.name, schema: WalletRefundRequestSchema }, // ADD THIS
       { name: GiftCard.name, schema: GiftCardSchema }, // ADD THIS
+      { name: PromotionClaim.name, schema: PromotionClaimSchema },
       { name: StreamSession.name, schema: StreamSessionSchema },
       { name: RechargePack.name, schema: RechargePackSchema },
       { name: SystemSettings.name, schema: SystemSettingsSchema },

@@ -939,6 +939,8 @@ export class AdminPaymentsService {
     promoBannerRedirectRoute?: string;
     isWelcomeWhatsAppEnabled?: boolean;
     welcomeWhatsAppText?: string;
+    isInteraktWelcomeEnabled?: boolean;
+    interaktWelcomeTemplateName?: string;
   }): Promise<any> {
     let settings = await this.systemSettingsModel.findOne();
     if (!settings) {
@@ -959,6 +961,8 @@ export class AdminPaymentsService {
         promoBannerRedirectRoute: updateData.promoBannerRedirectRoute ?? '',
         // isWelcomeWhatsAppEnabled: updateData.isWelcomeWhatsAppEnabled ?? false,
         // welcomeWhatsAppText: updateData.welcomeWhatsAppText ?? 'Congratulations! You are eligible for 100 credits for just ₹1. Recharge your wallet now!',
+        isInteraktWelcomeEnabled: updateData.isInteraktWelcomeEnabled ?? false,
+        interaktWelcomeTemplateName: updateData.interaktWelcomeTemplateName ?? 'welcome_bonus',
       });
     } else {
       if (updateData.defaultPlatformCommissionRate !== undefined) {
@@ -1015,6 +1019,12 @@ export class AdminPaymentsService {
       // if (updateData.welcomeWhatsAppText !== undefined) {
       //   settings.welcomeWhatsAppText = updateData.welcomeWhatsAppText;
       // }
+      if (updateData.isInteraktWelcomeEnabled !== undefined) {
+        settings.isInteraktWelcomeEnabled = updateData.isInteraktWelcomeEnabled;
+      }
+      if (updateData.interaktWelcomeTemplateName !== undefined) {
+        settings.interaktWelcomeTemplateName = updateData.interaktWelcomeTemplateName;
+      }
     }
     await settings.save();
     return {

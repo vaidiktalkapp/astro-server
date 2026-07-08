@@ -356,16 +356,13 @@ export class AuthService {
       };
 
       if (isNewUser) {
-        // Asynchronously check settings and send WhatsApp welcome message (COMMENTED FOR NOW)
-        /*
+        // Asynchronously check settings and send WhatsApp welcome message via Interakt
         this.systemSettingsModel.findOne().then(settings => {
-          if (settings && settings.isWelcomeWhatsAppEnabled && settings.welcomeWhatsAppText) {
-            this.otpService.sendWhatsAppMessage(phoneNumber, countryCode, settings.welcomeWhatsAppText).catch(e => 
-              this.logger.error('Failed to send welcome WhatsApp message:', e)
-            );
+          if (settings && settings.isInteraktWelcomeEnabled && settings.interaktWelcomeTemplateName) {
+            this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName)
+              .catch(e => this.logger.error('Failed to send Interakt welcome message:', e));
           }
         }).catch(e => this.logger.error('Failed to fetch settings for WhatsApp message:', e));
-        */
       }
 
       this.logger.log('✅ AUTH SERVICE: OTP verification completed');
@@ -526,16 +523,13 @@ export class AuthService {
       this.logger.log('✅ Truecaller authentication successful');
 
       if (isNewUser) {
-        // Asynchronously check settings and send WhatsApp welcome message (COMMENTED FOR NOW)
-        /*
+        // Asynchronously check settings and send WhatsApp welcome message via Interakt
         this.systemSettingsModel.findOne().then(settings => {
-          if (settings && settings.isWelcomeWhatsAppEnabled && settings.welcomeWhatsAppText) {
-            this.otpService.sendWhatsAppMessage(phoneNumber, countryCode, settings.welcomeWhatsAppText).catch(e => 
-              this.logger.error('Failed to send welcome WhatsApp message:', e)
-            );
+          if (settings && settings.isInteraktWelcomeEnabled && settings.interaktWelcomeTemplateName) {
+            this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName)
+              .catch(e => this.logger.error('Failed to send Interakt welcome message:', e));
           }
         }).catch(e => this.logger.error('Failed to fetch settings for WhatsApp message:', e));
-        */
       }
 
       return {

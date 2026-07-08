@@ -20,6 +20,7 @@ import { ChatSessionService } from '../../chat/services/chat-session.service';
 import { CallSessionService } from '../../calls/services/call-session.service';
 import { Astrologer, AstrologerDocument } from '../../astrologers/schemas/astrologer.schema';
 import { SystemSettings, SystemSettingsDocument } from '../schemas/system-settings.schema';
+import { PromotionClaim, PromotionClaimDocument } from '../schemas/promotion-claim.schema';
 
 const GST_PERCENTAGE = 18;
 
@@ -42,6 +43,8 @@ export class WalletService {
     private astrologerModel: Model<AstrologerDocument>,
     @InjectModel(SystemSettings.name)
     private systemSettingsModel: Model<SystemSettingsDocument>,
+    @InjectModel(PromotionClaim.name)
+    private promotionClaimModel: Model<PromotionClaimDocument>,
     private razorpayService: RazorpayService,
     private appleIapService: AppleIapService, // ✅ Added Apple IAP
     private moduleRef: ModuleRef,
@@ -220,6 +223,16 @@ export class WalletService {
       }).session(session || null);
 
       if (hasReceivedWelcome) return false;
+
+      // 2.5 ✅ PERMANENT FIX: Check if this phoneHash has EVER claimed a welcome bonus, even on a previous deleted account.
+      if (user.phoneHash) {
+        const hasClaimedPermanently = await this.promotionClaimModel.exists({
+          phoneHash: user.phoneHash,
+          promotionType: 'welcome_bonus'
+        }).session(session || null);
+
+        if (hasClaimedPermanently) return false;
+      }
 
       // 3. Check if they have ever completed any OTHER recharges
       const otherCompletedRecharges = await this.transactionModel.countDocuments({
@@ -484,6 +497,15 @@ export class WalletService {
             createdAt: new Date(),
             metadata: { relatedRechargeId: transactionId, isWelcomeBonus: true }
           });
+
+          // ✅ Record this claim permanently against the phoneHash
+          if (user.phoneHash) {
+            await this.promotionClaimModel.findOneAndUpdate(
+              { phoneHash: user.phoneHash, promotionType: 'welcome_bonus' },
+              { userId: user._id },
+              { upsert: true, session }
+            );
+          }
         }
 
         // ✅ 4. Process Normal Pack Bonus Transaction
@@ -668,6 +690,15 @@ export class WalletService {
           createdAt: new Date(),
           metadata: { relatedRechargeId: transactionId, isWelcomeBonus: true }
         });
+
+        // ✅ Record this claim permanently against the phoneHash
+        if (user.phoneHash) {
+          await this.promotionClaimModel.findOneAndUpdate(
+            { phoneHash: user.phoneHash, promotionType: 'welcome_bonus' },
+            { userId: user._id },
+            { upsert: true, session }
+          );
+        }
       }
 
       let bonusTransaction: WalletTransactionDocument | null = null;

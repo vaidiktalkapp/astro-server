@@ -279,7 +279,7 @@ export class AstrologersService {
       this.astrologerModel
         .find(finalQuery)
         // ✅ Include 'availability' to compute real-time status
-        .select('name bio profilePicture experienceYears specializations languages ratings pricing availability stats gender country tier')
+        .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats gender country tier')
         .sort(sortCriteria)
         .skip(skip)
         .limit(limit)
@@ -495,7 +495,7 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name bio profilePicture experienceYears specializations languages ratings pricing availability stats')
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
       .sort({ 'ratings.average': -1, 'stats.totalOrders': -1 })
       .limit(limit)
       .lean()
@@ -536,7 +536,7 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name bio profilePicture experienceYears specializations languages ratings pricing availability stats')
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
       .sort({ 'ratings.average': -1, 'ratings.total': -1 })
       .limit(limit)
       .lean()
@@ -578,7 +578,7 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name bio profilePicture experienceYears specializations languages ratings pricing availability stats')
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
       .sort({ 'ratings.average': -1, 'availability.lastActive': -1 })
       .limit(limit)
       .lean()
@@ -615,7 +615,7 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name bio profilePicture experienceYears specializations languages ratings pricing availability stats')
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
       .sort({ 'ratings.average': -1, 'stats.totalOrders': -1 })
       .limit(limit)
       .lean()
@@ -713,16 +713,19 @@ export class AstrologersService {
       validatedId = astrologerId;
     }
 
-    if (!Types.ObjectId.isValid(validatedId)) {
-      throw new BadRequestException('Invalid astrologer ID format');
+    const query: any = {
+      accountStatus: 'active',
+      'profileCompletion.isComplete': true
+    };
+
+    if (Types.ObjectId.isValid(validatedId)) {
+      query._id = validatedId;
+    } else {
+      query.slug = validatedId;
     }
 
     const astrologer = await this.astrologerModel
-      .findOne({
-        _id: validatedId,
-        accountStatus: 'active',
-        'profileCompletion.isComplete': true
-      })
+      .findOne(query)
       .select('-phoneNumber -email -fcmToken -fcmTokenUpdatedAt')
       .lean()
       .exec();
@@ -757,7 +760,7 @@ export class AstrologersService {
 
     const liveAstrologers = await this.astrologerModel
       .find(query)
-      .select('name profilePicture specializations ratings availability.liveStreamId availability.lastActive stats')
+      .select('name slug profilePicture specializations ratings availability.liveStreamId availability.lastActive stats')
       .sort({ 'ratings.average': -1, 'availability.lastActive': -1 })
       .limit(limit)
       .lean()

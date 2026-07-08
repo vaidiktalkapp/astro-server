@@ -434,6 +434,8 @@ export class AdminAiAstrologersService {
             sessionId: log.sessionId,
             userName: log.userId?.name || 'Unknown',
             userProfile: log.userId?.image || log.userId?.avatar || log.userId?.profilePicture,
+            userId: log.userId, // Preserve original populated object for frontend
+            astrologerId: log.astrologerId, // Preserve original populated object for frontend
             aiAstrologerId: log.astrologerId?._id,
             aiAstrologerName: log.astrologerId?.name,
             duration: Math.round((log.duration || 0) / 60),

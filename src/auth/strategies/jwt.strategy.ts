@@ -133,6 +133,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
       return {
         _id: astrologer._id,
+        astrologerId: astrologer._id, // ✅ Required for SupportController
+        role: 'astrologer',           // ✅ Required to identify role
         phoneNumber: astrologer.phoneNumber,
         name: astrologer.name,
         profilePicture: astrologer.profilePicture,

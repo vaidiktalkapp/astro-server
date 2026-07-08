@@ -216,9 +216,15 @@ export class AstrologersController {
 
     console.log(`📝 [AstrologersController] Review attempt: astrologerId=${astrologerId}, userId=${userId}, orderId=${reviewDto.orderId}`);
 
+    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
+    if (!astrologer || !astrologer.data) {
+      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
+    }
+    const resolvedId = astrologer.data._id.toString();
+
     return this.ratingReviewService.addReview({
       userId,
-      astrologerId,
+      astrologerId: resolvedId,
       orderId: reviewDto.orderId,
       rating: reviewDto.rating,
       reviewText: reviewDto.reviewText,
@@ -248,8 +254,14 @@ export class AstrologersController {
       throw new HttpException('Limit must be between 1 and 100', HttpStatus.BAD_REQUEST);
     }
 
+    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
+    if (!astrologer || !astrologer.data) {
+      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
+    }
+    const resolvedId = astrologer.data._id.toString();
+
     return this.ratingReviewService.getAstrologerReviews(
-      astrologerId, 
+      resolvedId, 
       parsedPage, 
       parsedLimit
     );
@@ -261,7 +273,11 @@ export class AstrologersController {
    */
   @Get(':astrologerId/reviews/stats')
   async getReviewStats(@Param('astrologerId') astrologerId: string) {
-    return this.ratingReviewService.getReviewStats(astrologerId);
+    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
+    if (!astrologer || !astrologer.data) {
+      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
+    }
+    return this.ratingReviewService.getReviewStats(astrologer.data._id.toString());
   }
 
   /**
@@ -282,22 +298,22 @@ export class AstrologersController {
     
     const userId = req.user?.userId || req.user?.id;
     
+    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
+    
+    if (!astrologer || !astrologer.data) {
+      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
+    }
+    
     // Check if user has blocked this astrologer
     if (userId) {
       const isBlocked = await this.userBlockingService.isAstrologerBlocked(
         userId as any,
-        astrologerId
+        astrologer.data._id.toString()
       );
       
       if (isBlocked) {
         throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
       }
-    }
-    
-    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
-    
-    if (!astrologer) {
-      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
     }
     
     // ✅ Include reviews if requested (default: true)
@@ -310,7 +326,7 @@ export class AstrologersController {
       
       // Get reviews
       const reviewsData = await this.ratingReviewService.getAstrologerReviews(
-        astrologerId, 
+        astrologer.data._id.toString(), 
         1, 
         parsedReviewLimit
       );

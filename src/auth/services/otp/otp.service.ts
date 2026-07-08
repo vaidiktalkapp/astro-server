@@ -252,6 +252,63 @@ export class OtpService {
     }
   }
 
+  // Send Interakt Welcome Message (Template)
+  async sendInteraktWelcomeMessage(
+    phoneNumber: string,
+    countryCode: string,
+    templateName: string
+  ): Promise<boolean> {
+    try {
+      const cleanPhone = this.normalizePhoneNumber(phoneNumber, countryCode);
+      const interaktApiKey = this.configService.get<string>('INTERAKT_API_KEY');
+
+      if (!interaktApiKey) {
+        this.logger.error('❌ Interakt API Key not found in environment variables');
+        return false;
+      }
+
+      // Add '+' to country code if missing
+      const formattedCountryCode = countryCode.startsWith('+') ? countryCode : `+${countryCode}`;
+
+      this.logger.log(`📞 Sending Interakt Welcome Template '${templateName}' to ${formattedCountryCode}${cleanPhone}`);
+
+      const response = await axios.post(
+        'https://api.interakt.ai/v1/public/message/',
+        {
+          countryCode: formattedCountryCode,
+          phoneNumber: cleanPhone,
+          type: 'Template',
+          template: {
+            name: templateName,
+            languageCode: 'en'
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Basic ${interaktApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000,
+        }
+      );
+
+      if (response.status === 200 || response.status === 201 || response.status === 202) {
+        this.logger.log(`✅ Interakt Welcome Message sent successfully to ${formattedCountryCode}${cleanPhone}`);
+        return true;
+      } else {
+        this.logger.error(`❌ Interakt API returned status: ${response.status}`);
+        return false;
+      }
+    } catch (error: any) {
+      this.logger.error('❌ Interakt API Error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      return false;
+    }
+  }
+
   // Verify OTP
   async verifyOTP(
     phoneNumber: string,

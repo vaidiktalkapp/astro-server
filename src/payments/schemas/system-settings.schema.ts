@@ -20,11 +20,12 @@ export class SystemSettings {
   @Prop({ default: 100, min: 0 })
   welcomeBonusAmount: number;
 
-  // @Prop({ default: false })
-  // isWelcomeWhatsAppEnabled: boolean;
+  @Prop({ default: false })
+  isInteraktWelcomeEnabled: boolean;
 
-  // @Prop({ default: 'Congratulations! You are eligible for 100 credits for just ₹1. Recharge your wallet now!' })
-  // welcomeWhatsAppText: string;
+  @Prop({ default: 'welcome_bonus' })
+  interaktWelcomeTemplateName: string;
+
 
   @Prop({ default: false })
   isPromoBannerActive: boolean;
