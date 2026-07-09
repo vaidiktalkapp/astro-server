@@ -26,6 +26,9 @@ export class SystemSettings {
   @Prop({ default: 'welcome_bonus' })
   interaktWelcomeTemplateName: string;
 
+  @Prop({ default: "Congratulations\n🎉You have unlocked a special welcome offer on VaidikTalk! Get 100 Credits in your wallet for just ₹1.🎁\nDon't miss out on this limited-time offer. Recharge your wallet now and start your spiritual journey with us! ✨" })
+  interaktWelcomeMessageText: string;
+
 
   @Prop({ default: false })
   isPromoBannerActive: boolean;

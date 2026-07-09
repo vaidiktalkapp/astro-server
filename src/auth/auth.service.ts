@@ -359,7 +359,8 @@ export class AuthService {
         // Asynchronously check settings and send WhatsApp welcome message via Interakt
         this.systemSettingsModel.findOne().then(settings => {
           if (settings && settings.isInteraktWelcomeEnabled && settings.interaktWelcomeTemplateName) {
-            this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName)
+            const welcomeText = settings.interaktWelcomeMessageText || "Congratulations\n🎉You have unlocked a special welcome offer on VaidikTalk! Get 100 Credits in your wallet for just ₹1.🎁\nDon't miss out on this limited-time offer. Recharge your wallet now and start your spiritual journey with us! ✨";
+            this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName, [welcomeText])
               .catch(e => this.logger.error('Failed to send Interakt welcome message:', e));
           }
         }).catch(e => this.logger.error('Failed to fetch settings for WhatsApp message:', e));
@@ -526,7 +527,8 @@ export class AuthService {
         // Asynchronously check settings and send WhatsApp welcome message via Interakt
         this.systemSettingsModel.findOne().then(settings => {
           if (settings && settings.isInteraktWelcomeEnabled && settings.interaktWelcomeTemplateName) {
-            this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName)
+            const welcomeText = settings.interaktWelcomeMessageText || "🎉You have unlocked a special welcome offer on VaidikTalk! Get 100 Credits in your wallet for just ₹1.🎁\nDon't miss out on this limited-time offer. Recharge your wallet now and start your spiritual journey with us! ✨";
+            this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName, [welcomeText])
               .catch(e => this.logger.error('Failed to send Interakt welcome message:', e));
           }
         }).catch(e => this.logger.error('Failed to fetch settings for WhatsApp message:', e));

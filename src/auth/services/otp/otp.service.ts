@@ -256,7 +256,8 @@ export class OtpService {
   async sendInteraktWelcomeMessage(
     phoneNumber: string,
     countryCode: string,
-    templateName: string
+    templateName: string,
+    bodyValues?: string[]
   ): Promise<boolean> {
     try {
       const cleanPhone = this.normalizePhoneNumber(phoneNumber, countryCode);
@@ -280,7 +281,10 @@ export class OtpService {
           type: 'Template',
           template: {
             name: templateName,
-            languageCode: 'en'
+            languageCode: 'en',
+            ...(bodyValues && bodyValues.length > 0 && { 
+              bodyValues: bodyValues.map(v => v.replace(/[\n\r\t]/g, ' ').replace(/\s{2,}/g, ' ').trim()) 
+            })
           }
         },
         {
