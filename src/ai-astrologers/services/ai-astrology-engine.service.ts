@@ -807,7 +807,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
     - **INTEGRATED NARRATIVE**: Provide a smooth, card-based reading in 2 short paragraphs.
     - **STRICT RULE**: NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text.
     - **CONTENT**: Focus 100% on Tarot card imagery, spreads, and arcana symbolism. Do NOT explicitly mention the user's "Sun Sign", "Moon Sign", "planets", or "Vedic horoscope". If a card has an astrological connection (like The Emperor being linked to Mars/Aries), you may mention the "bold, pioneering Aries-like energy of the card" to enrich the story, but DO NOT say "you have an Aries Sun Sign". Keep the entire reading strictly card-based.
-    - **LENGTH**: 100-150 words.
+    - **LENGTH**: 80-120 words.
     `;
                 } else if (expertise === 'Numerology') {
                     instructions = `
@@ -818,7 +818,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
     - **SMOOTH CYCLES**: Provide a numerical analysis in 2 concise paragraphs.
     - **STRICT RULE**: NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text. NEVER end your message by asking questions like "Would you like to know about your X number?".
     - **CONTENT**: Provide guidance based on Life Path, Destiny, and Personal Year numbers. Link these numbers directly to the user's current real-world situation, whatever it may be. Do NOT mention "Sun Signs", "Moon Signs", "planetary transits", "Kundali", or "Houses".
-    - **LENGTH**: 100-150 words.
+    - **LENGTH**: 80-120 words.
     `;
                 } else {
                     // Default Vedic template
