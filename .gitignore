@@ -100,3 +100,4 @@ estimate_*.js
 recover_*.js
 append_*.js
 query.js
+update-avatars.ts
