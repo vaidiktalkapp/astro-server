@@ -87,3 +87,16 @@ seed*.js
 
 # Keys and certificates
 *.pem
+
+# Data and Reports
+*.csv
+june_2026_analysis.md
+
+# Scratch and One-off Temporary Scripts
+scratch/
+scratch_explanation.md
+analyze_*.js
+estimate_*.js
+recover_*.js
+append_*.js
+query.js
