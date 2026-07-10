@@ -101,3 +101,5 @@ recover_*.js
 append_*.js
 query.js
 update-avatars.ts
+test_live.ts
+test_prompt.js
