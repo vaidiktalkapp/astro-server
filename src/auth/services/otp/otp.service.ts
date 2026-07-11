@@ -146,7 +146,6 @@ export class OtpService {
     }
   }
 
-  // FIXED: Exact Vepaar API implementation as per documentation
   private async sendVepaarOTP(
     phoneNumber: string,
     countryCode: string,
@@ -183,6 +182,9 @@ export class OtpService {
         return true;
       } else {
         this.logger.error(`❌ Vepaar API returned status: ${response.status}`);
+        if (response.status === 429) {
+          throw new TooManyRequestsException('Too many OTP requests. Please try again later.');
+        }
         return false;
       }
 
@@ -205,6 +207,10 @@ export class OtpService {
         phoneNumber: `${countryCode}${phoneNumber}`,
         otpLength: otp.length
       });
+
+      if (error.response?.status === 429) {
+        throw new TooManyRequestsException('Too many OTP requests. Please try again later.');
+      }
 
       return false;
     }
