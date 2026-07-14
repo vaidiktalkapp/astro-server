@@ -103,3 +103,9 @@ query.js
 update-avatars.ts
 test_live.ts
 test_prompt.js
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
