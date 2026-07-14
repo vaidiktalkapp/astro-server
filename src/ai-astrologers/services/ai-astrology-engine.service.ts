@@ -641,18 +641,22 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
             });
         }
 
-        // 4. Lakshmi Yoga (9th Lord in Kendra and Lagna Lord strong)
-        // Simplified: 9th Lord and Lagna Lord connection or strong placements
+        // 4. Lakshmi Yoga (Classical definition)
+        // Lagna Lord must be strong (Own Sign, Exalted, or in Kendra/Trikona)
+        // AND 9th Lord must be strong (Own Sign, Exalted) and in Kendra/Trikona
         const lagnaSign = kundli.ascendant;
         const lagnaLord = this.getLordOfSign(lagnaSign);
         const ninthHouse = houses[9];
         const ninthLord = ninthHouse?.lord;
 
         if (p[ninthLord] && p[lagnaLord]) {
-            if (p[ninthLord].relation === "Exalted" && [1, 4, 7, 10].includes(p[lagnaLord].house)) {
+            const lagnaStrong = ["Exalted", "Own Sign", "Moolatrikona"].includes(p[lagnaLord].relation) || [1, 4, 7, 10, 5, 9].includes(p[lagnaLord].house);
+            const ninthStrong = ["Exalted", "Own Sign"].includes(p[ninthLord].relation) && [1, 4, 7, 10, 5, 9].includes(p[ninthLord].house);
+
+            if (lagnaStrong && ninthStrong) {
                 yogas.push({
                     name: "Lakshmi Yoga",
-                    description: "Strong alignment of 9th and Lagna lords. Indicates significant wealth and prosperity."
+                    description: "Classical alignment of 9th and Lagna lords. Indicates significant wealth, good fortune, and prosperity."
                 });
             }
         }
@@ -1553,8 +1557,18 @@ IMPORTANT RULES:
 
             // 1. Check for manual override first
             const date = new Date();
-            if (period.toLowerCase() === 'tomorrow') {
+            const p = period.toLowerCase();
+            if (p === 'tomorrow') {
                 date.setDate(date.getDate() + 1);
+            }
+            if (p === 'yesterday') {
+                date.setDate(date.getDate() - 1);
+            }
+            // For weekly, normalize to the start of the week (Monday) to ensure consistent caching
+            if (p === 'weekly') {
+                const day = date.getDay();
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+                date.setDate(diff);
             }
             const targetDateStr = date.toISOString().split('T')[0];
 
@@ -1716,8 +1730,18 @@ IMPORTANT:
     /**
      * CHINESE ASTROLOGY: Deep personal reading based on DOB
      */
+    private personalChineseCache = new Map<string, { timestamp: number, data: any }>();
+
     async getPersonalChineseReading(name: string, dob: string, language: string = 'English'): Promise<any> {
         try {
+            // Check in-memory cache first (valid for 24 hours)
+            const cacheKey = `${name}_${dob}_${language}`;
+            const cached = this.personalChineseCache.get(cacheKey);
+            if (cached && (Date.now() - cached.timestamp < 24 * 60 * 60 * 1000)) {
+                this.logger.log(`🐉 [Personal Chinese] Serving CACHED reading for ${name}`);
+                return cached.data;
+            }
+
             this.logger.log(`🐉 [Personal Chinese] Analyzing destiny for ${name} (${dob})...`);
 
             const systemPrompt = `You are a Grand Master of Chinese Astrology. Use the Bazi (Four Pillars of Destiny) principles to analyze this user.
@@ -1756,7 +1780,12 @@ IMPORTANT:
                 response_format: { type: 'json_object' }
             });
 
-            return JSON.parse(completion.choices[0].message.content || '{}');
+            const result = JSON.parse(completion.choices[0].message.content || '{}');
+            
+            // Save to cache
+            this.personalChineseCache.set(cacheKey, { timestamp: Date.now(), data: result });
+            
+            return result;
         } catch (error) {
             this.logger.error('Error in getPersonalChineseReading:', error);
             throw error;

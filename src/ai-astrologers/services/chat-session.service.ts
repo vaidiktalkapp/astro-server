@@ -465,8 +465,11 @@ export class AiChatSessionService implements OnModuleInit {
     }
 
     private calculateQualityScore(content: string): number {
-        let score = 7; // Increased base score
-        if (content.length > 300) score += 2;
+        let score = 5; // Start from 5 instead of 7
+        
+        // Length checks
+        if (content.length < 50) score -= 2; // Very short
+        else if (content.length > 300) score += 2; // Detailed
         else if (content.length > 100) score += 1;
 
         // Language-agnostic indicators of depth (length, structured lists, etc.)
@@ -474,10 +477,13 @@ export class AiChatSessionService implements OnModuleInit {
 
         // Core spiritual/astrological keywords (English & Hindi)
         if (/vibration|energy|karma|path|destiny|cycle|timing|guidance|remedy|blessing|Graha|Bhava|Dasha|Nakshatra|Yoga|रवि|चंद्र|मंगल|बुध|नक्षत्र|योग|दशा/i.test(content)) {
-            score += 2;
+            score += 3;
+        } else {
+            // No keywords? That's a bad sign.
+            score -= 1;
         }
 
-        return Math.min(score, 10);
+        return Math.max(1, Math.min(score, 10)); // Ensure it's between 1 and 10
     }
 
     async getSessionDetails(id: string, userId: string): Promise<any> {
