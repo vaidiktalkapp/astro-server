@@ -258,9 +258,10 @@ ${birthDetails.query ? `- Additional Details: ${birthDetails.query}` : ''}
 
 USER PREFERRED LANGUAGE: ${callLanguage}
 (CRITICAL: Start the call by greeting strictly in ${callLanguage}. However, you are a multilingual expert. If the user speaks in ANY other language like Hindi, English, or Hinglish, switch to their language naturally and immediately. 
-- English input → English reply
-- Hindi/Hinglish input → Reply in Hindi but ALWAYS use Roman script (Hinglish). NEVER use Devanagari script.
-NEVER refuse to answer because of a language choice. Stay in their chosen language for the remainder of the session unless they switch again. Do not repeat greeting patterns after the first message).
+- English spoken input → English reply
+- Hindi/Hinglish spoken input → Reply in normal, daily conversational Hindi (Bolchal ki bhasha) using Devanagari script. DO NOT use tough Sanskrit words. DO NOT use Roman script (Hinglish).
+NEVER refuse to answer because of a language choice. Stay in their chosen language for the remainder of the session unless they switch again. Do not repeat greeting patterns after the first message.
+- VOICE CONVERSATION RULE: Wait for the user to ask a specific question after the initial greeting. NEVER start reading the chart or giving predictions unprompted. Give complete but conversational answers (2-4 sentences). Speak like a human expert on a phone call. Avoid long monologues.
 
 ${previousTranscriptContext}
 `.trim();
@@ -313,10 +314,11 @@ SESSION START LANGUAGE: ${callLanguage}
 LANGUAGE RULES (CRITICAL — follow for EVERY response):
 1. Detect user spoken language dynamically.
 2. If user speaks Hindi/Hinglish, you must reply ONLY in Hindi/Hinglish.
-3. English input → English reply.
-4. Hindi/Hinglish input → Reply in Hindi but ALWAYS use Roman script (Hinglish). NEVER use Devanagari script, as the text-to-speech engine will fail.
+3. English spoken input → English reply.
+4. Hindi/Hinglish spoken input → Reply in normal, daily conversational Hindi (Bolchal ki bhasha) using Devanagari script. DO NOT use tough Sanskrit words. DO NOT use Roman script (Hinglish) as it ruins the voice engine pronunciation.
 5. Once the user speaks a language, stay in that language for ALL remaining replies unless they switch again. NEVER switch back to English automatically.
-6. Use 'Kundli', 'Graha', 'Rashi', 'Dasha', 'Upay' when speaking Hindi/Hinglish.
+6. VOICE CONVERSATION RULE: Wait for the user to ask a specific question after the initial greeting. NEVER start reading the chart or giving predictions unprompted. Give complete but conversational answers (2-4 sentences). Speak like a human expert on a phone call. Avoid long monologues.
+7. Use 'Kundli', 'Graha', 'Rashi', 'Dasha', 'Upay' when speaking Hindi.
 7. CRITICAL PHONETICS (Roman Script):
    - Use "Main" ONLY for "I" (e.g., "Main Swati hoon").
    - Use "Mein" ONLY for "In" (e.g., "Aapki rashi mein Shani hai"). 
@@ -329,7 +331,7 @@ ${previousTranscriptContext}
       name: aiProfile.name,
       model: {
         provider: 'openai',
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -353,6 +355,7 @@ ${previousTranscriptContext}
       voice: {
         provider: finalProvider as any,
         voiceId: finalVoiceId,
+        speed: 1.15,
       },
       silenceTimeoutSeconds: 3600,
 

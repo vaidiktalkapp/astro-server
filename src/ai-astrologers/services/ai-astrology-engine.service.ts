@@ -379,7 +379,7 @@ Remedies → Behavioral, mindset, and energy-based guidance
     - **ENGLISH**: If the user writes/speaks in English, respond 100% in English.
     - **HINDI / HINGLISH**: 
         - If the user writes/speaks in Hindi or Hinglish, your response MUST be in Hindi/Hinglish.
-        - ${isVoice ? 'CRITICAL (VOICE): ALWAYS use Roman script (Hinglish) for Hindi. NEVER use Devanagari script as it will break the voice synthesis.' : 'If the user writes in Devanagari script, reply in Devanagari. If they use Roman script, reply in Roman script.'}
+        - ${isVoice ? 'CRITICAL (VOICE): ALWAYS use native Devanagari script for Hindi. DO NOT use Roman script (Hinglish) as it ruins pronunciation.' : 'If the user writes in Devanagari script, reply in Devanagari. If they use Roman script, reply in Roman script.'}
     - **STRICT LANGUAGE PARITY**: Never switch to Spanish, French, or any other foreign language. Always follow the user's language.
     - **NO SYMBOLS**: Output your response as clean plain text only. Do NOT use symbols like * or # for formatting.
     
@@ -1211,48 +1211,16 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
         language: string = 'English',
         astrologerProfile?: any
     ): Promise<string> {
-        try {
-            const istDateString = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-            const currentHour = new Date(istDateString).getHours();
-            const timeOfDay = currentHour < 12 ? 'Morning' : (currentHour < 16 ? 'Afternoon' : 'Evening');
-
-            const astroName = astrologerProfile?.name || 'Divine Guide';
-            const expertise = astrologerProfile?.expertise || 'Astrology';
-
-            const genderSuffix = astrologerProfile?.gender === 'female' ? 'sakti' : 'sakta';
-
-            const prompt = `Generate a warm, professional, and spiritual opening for an AI session.
-            
-            Context:
-            - AI Astrologer Name: ${astroName}
-            - Expertise: ${expertise}
-            - User Name: ${userName}
-            - Time of Day: ${timeOfDay}
-            - Language: ${language}
-            - Gender: ${astrologerProfile?.gender || 'male'}
-            
-            Instructions:
-            1. Use EXACTLY this format: "Namaste {first name}, Main ${astroName}. Kaise hain aap? Main aapki aaj kaise madad kar ${genderSuffix} hoon?"
-            2. Use ONLY the user's FIRST NAME (e.g., if the name is "Vishal Yadav", say "Vishal" not "Vishal Yadav").
-            3. Do NOT add any extra phrases like "aapka shubh samay hai" or "divine blessings".
-            4. Do NOT use symbols like * or #. Plain text only.
-            5. Keep it exactly as the format above — do not add or remove anything.`;
-
-            const completion = await this.openai.chat.completions.create({
-                model: this.MODEL_NAME,
-                messages: [
-                    { role: 'system', content: `You are ${astroName}, a spiritual ${expertise} expert. You respond ONLY in ${language}.` },
-                    { role: 'user', content: prompt }
-                ],
-                max_tokens: 100,
-                temperature: 0.8
-            });
-
-            return (completion.choices[0].message.content || '').trim();
-        } catch (error) {
-            this.logger.error('Greeting generation error:', error);
-            const genderSuffix = astrologerProfile?.gender === 'female' ? 'सकती' : 'सकता';
-            return language === 'Hindi' ? `नमस्ते। सितारे आपके पक्ष में हैं। मैं आपकी आज कैसे सहायता कर ${genderSuffix} हूँ?` : "Namaste. The stars are aligned. How may I guide you today?";
+        const astroName = astrologerProfile?.name || 'Divine Guide';
+        const isFemale = astrologerProfile?.gender === 'female';
+        const firstName = userName ? userName.split(' ')[0] : 'Seeker';
+        
+        // Return instant local string to save 1-2 seconds of OpenAI latency during call connection
+        if (language?.toLowerCase().includes('hi')) {
+            const suffix = isFemale ? 'सकती' : 'सकता';
+            return `नमस्ते ${firstName}, मैं ${astroName} हूँ। मैं आज आपकी कैसे सहायता कर ${suffix} हूँ?`;
+        } else {
+            return `Namaste ${firstName}, I am ${astroName}. How may I guide you today?`;
         }
     }
 
