@@ -185,7 +185,7 @@ Respond with ONLY the JSON object. No preamble.`,
         const apiKey = this.configService.get<string>('OPENAI_API_KEY');
         if (!apiKey) {
             this.logger.error('❌ FATAL: OPENAI_API_KEY not found in .env file! AI Astrology features will not work.');
-            this.openai = new OpenAI({ apiKey: 'MISSING_API_KEY', dangerouslyAllowBrowser: true });
+            this.openai = new OpenAI({ apiKey: 'MISSING_API_KEY' });
         } else {
             this.openai = new OpenAI({ apiKey });
         }
@@ -409,15 +409,31 @@ Remedies → Behavioral, mindset, and energy-based guidance
 
     private detectAstrologyIntent(message: string): string {
         const msg = message.toLowerCase();
-        if (msg.includes('job') || msg.includes('career') || msg.includes('promotion') || msg.includes('business') || msg.includes('work') || msg.includes('office')) return 'career';
-        if (msg.includes('marry') || msg.includes('marriage') || msg.includes('love') || msg.includes('relationship') || msg.includes('partner') || msg.includes('husband') || msg.includes('wife')) return 'marriage';
-        if (msg.includes('health') || msg.includes('sick') || msg.includes('disease') || msg.includes('surgery') || msg.includes('mental') || msg.includes('injury')) return 'health';
-        if (msg.includes('money') || msg.includes('finance') || msg.includes('wealth') || msg.includes('rich') || msg.includes('investment') || msg.includes('loan')) return 'finance';
 
+        // Career — English + Hinglish
+        if (msg.includes('job') || msg.includes('career') || msg.includes('promotion') || msg.includes('business') || msg.includes('work') || msg.includes('office')
+            || msg.includes('naukri') || msg.includes('nokri') || msg.includes('kaam') || msg.includes('vyapar') || msg.includes('dukaan') || msg.includes('rojgar')) return 'career';
+
+        // Marriage / Relationship — English + Hinglish
+        if (msg.includes('marry') || msg.includes('marriage') || msg.includes('love') || msg.includes('relationship') || msg.includes('partner') || msg.includes('husband') || msg.includes('wife')
+            || msg.includes('shaadi') || msg.includes('shadi') || msg.includes('vivah') || msg.includes('rishta') || msg.includes('pyaar') || msg.includes('prem') || msg.includes('ladka') || msg.includes('ladki')) return 'marriage';
+
+        // Health — English + Hinglish
+        if (msg.includes('health') || msg.includes('sick') || msg.includes('disease') || msg.includes('surgery') || msg.includes('mental') || msg.includes('injury')
+            || msg.includes('bimari') || msg.includes('beemari') || msg.includes('dard') || msg.includes('operation') || msg.includes('dawai') || msg.includes('hospital')) return 'health';
+
+        // Finance — English + Hinglish
+        if (msg.includes('money') || msg.includes('finance') || msg.includes('wealth') || msg.includes('rich') || msg.includes('investment') || msg.includes('loan')
+            || msg.includes('paisa') || msg.includes('paise') || msg.includes('dhan') || msg.includes('ameer') || msg.includes('garib') || msg.includes('udhaar') || msg.includes('karj')) return 'finance';
+
+        // Daily / Horoscope
         if (msg.includes('today') || msg.includes('daily') || msg.includes('horoscope') || msg.includes('aaj') || msg.includes('tomorrow') || msg.includes('day')) return 'daily';
 
-        if (msg.includes('math') || msg.includes('science') || msg.includes('study') || msg.includes('learn') || msg.includes('exam') || msg.includes('education') || msg.includes('college') || msg.includes('school') || msg.includes('intelligence') || msg.includes('mind') || msg.includes('brain')) return 'education';
+        // Education — English + Hinglish
+        if (msg.includes('math') || msg.includes('science') || msg.includes('study') || msg.includes('learn') || msg.includes('exam') || msg.includes('education') || msg.includes('college') || msg.includes('school') || msg.includes('intelligence') || msg.includes('mind') || msg.includes('brain')
+            || msg.includes('padhai') || msg.includes('padhna') || msg.includes('result') || msg.includes('pass') || msg.includes('fail') || msg.includes('imtihan')) return 'education';
 
+        // Casual greeting
         if (msg.match(/(hi|hello|hey|greetings|namaste|pranam|how are you|kya haal|wassup|good morning|good evening|thanks|thank you)/i) && msg.split(' ').length < 10) return 'casual';
 
         return 'general';
@@ -981,19 +997,22 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                     let toolResponseStr = "Error calculating chart.";
                     try {
                         const coords = await this.astronomyService.geocodePlaceOfBirth(args.placeOfBirth);
+                        // Derive timezone from longitude (standard formula: lon / 15, rounded to nearest 0.5)
+                        const secondTzone = Math.round((coords.lon / 15) * 2) / 2;
+                        const primaryTzone = lon ? Math.round((parseFloat(lon) / 15) * 2) / 2 : 5.5;
                         const bInput = {
                             date: userBirthDetails.dateOfBirth,
                             time: userBirthDetails.timeOfBirth || '12:00',
                             lat: lat ? parseFloat(lat) : 28.6139,
                             lon: lon ? parseFloat(lon) : 77.2090,
-                            tzone: 5.5
+                            tzone: primaryTzone
                         };
                         const gInput = {
                             date: args.dateOfBirth,
                             time: args.timeOfBirth || '12:00',
                             lat: coords.lat,
                             lon: coords.lon,
-                            tzone: 5.5
+                            tzone: secondTzone
                         };
                         
                         // Calculate Match
@@ -1001,7 +1020,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                         
                         // Calculate their chart
                         const secondChart = await this.astronomyService.calculateAllData(
-                            args.dateOfBirth, args.timeOfBirth, String(coords.lat), String(coords.lon), 5.5
+                            args.dateOfBirth, args.timeOfBirth, String(coords.lat), String(coords.lon), secondTzone
                         );
                         
                         toolResponseStr = JSON.stringify({
@@ -1241,26 +1260,26 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
 
     async getLalKitabData(dto: any): Promise<any> {
         this.logger.log(`🪐 [AI Engine] Synthesizing Lal Kitab wisdom for ${dto.name}...`);
+        try {
+            // 1. Fetch Admin Overrides & Config
+            const settings = await this.lalKitabSettingsService.getOverrides();
 
-        // 1. Fetch Admin Overrides & Config
-        const settings = await this.lalKitabSettingsService.getOverrides();
+            const birthData = await this.astronomyService.calculateAllData(
+                dto.date,
+                dto.time,
+                dto.lat,
+                dto.lon,
+                dto.tzone || 5.5
+            );
 
-        const birthData = await this.astronomyService.calculateAllData(
-            dto.date,
-            dto.time,
-            dto.lat,
-            dto.lon,
-            dto.tzone || 5.5
-        );
+            const astroContext = this.buildAstroContext(
+                { ...birthData, name: dto.name, dob: dto.date, tob: dto.time, pob: dto.place },
+                'general',
+                'Vedic'
+            );
 
-        const astroContext = this.buildAstroContext(
-            { ...birthData, name: dto.name, dob: dto.date, tob: dto.time, pob: dto.place },
-            'general',
-            'Vedic'
-        );
-
-        // 2. Prepare Knowledge Libraries for AI selection
-        const librariesContext = `
+            // 2. Prepare Knowledge Libraries for AI selection
+            const librariesContext = `
 ADMIN KNOWLEDGE LIBRARIES (MANDATORY SELECTION BASE):
 ---
 GENERAL_RULES_LIBRARY:
@@ -1275,38 +1294,42 @@ INSTRUCTIONS:
 3. Only if a library is empty, you may generate your own traditional Lal Kitab remedies.
 `.trim();
 
-        // 3. Use Custom System Prompt if available
-        const baseSystemPrompt = settings.systemPrompts?.general || this.SPECIALIZATION_PROMPTS.LalKitab.general;
-        const systemPrompt = `${baseSystemPrompt}\n\n${librariesContext}`;
-        const userPrompt = `Generate the personalized Lal Kitab report for this native:\n${astroContext}`;
+            // 3. Use Custom System Prompt if available
+            const baseSystemPrompt = settings.systemPrompts?.general || this.SPECIALIZATION_PROMPTS.LalKitab.general;
+            const systemPrompt = `${baseSystemPrompt}\n\n${librariesContext}`;
+            const userPrompt = `Generate the personalized Lal Kitab report for this native:\n${astroContext}`;
 
-        const response = await this.openai.chat.completions.create({
-            model: this.MODEL_NAME,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.7
-        });
+            const response = await this.openai.chat.completions.create({
+                model: this.MODEL_NAME,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                response_format: { type: 'json_object' },
+                temperature: 0.7
+            });
 
-        const aiResult = JSON.parse(response.choices[0].message.content || '{}');
+            const aiResult = JSON.parse(response.choices[0].message.content || '{}');
 
-        // 4. APPLY HARD PLANET OVERRIDES (PLANET+HOUSE)
-        if (aiResult.planets) {
-            for (const [planetName, planetData] of Object.entries<any>(aiResult.planets)) {
-                const key = `${planetName}-${planetData.house}`;
-                if (settings.planetOverrides?.[key]) {
-                    this.logger.log(`✅ [AI Engine] Applying Admin override for ${key}`);
-                    aiResult.planets[planetName] = {
-                        ...planetData,
-                        ...settings.planetOverrides[key]
-                    };
+            // 4. APPLY HARD PLANET OVERRIDES (PLANET+HOUSE)
+            if (aiResult.planets) {
+                for (const [planetName, planetData] of Object.entries<any>(aiResult.planets)) {
+                    const key = `${planetName}-${planetData.house}`;
+                    if (settings.planetOverrides?.[key]) {
+                        this.logger.log(`✅ [AI Engine] Applying Admin override for ${key}`);
+                        aiResult.planets[planetName] = {
+                            ...planetData,
+                            ...settings.planetOverrides[key]
+                        };
+                    }
                 }
             }
-        }
 
-        return aiResult;
+            return aiResult;
+        } catch (error: any) {
+            this.logger.error(`❌ [AI Engine] getLalKitabData failed for ${dto?.name}: ${error?.message}`);
+            throw new Error(`Lal Kitab report generation failed: ${error?.message || 'Unknown error'}`);
+        }
     }
 
 
