@@ -332,7 +332,7 @@ def calculate_kundli(data):
         planets["Ascendant"] = _planet_entry("Ascendant", [asc_lon, 0, 0, 0], cusps, asc_lon)
 
         for name, id_attr in PLANET_IDS.items():
-            pos = swe.calc_ut(jd, getattr(swe, id_attr), swe.FLG_SWIEPH | swe.FLG_SIDEREAL)
+            pos = swe.calc_ut(jd, getattr(swe, id_attr), swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED)
             planets[name] = _planet_entry(name, pos, cusps, asc_lon)
 
         # Rahu is typically retrograde in Mean Node calc, but we mark as False for tradition
@@ -341,8 +341,24 @@ def calculate_kundli(data):
         ketu_lon = (rahu_lon + 180) % 360
         planets["Ketu"] = _planet_entry("Ketu", [ketu_lon, 0, 0, 0], cusps, asc_lon)
 
-
-
+        # ─── Combustion (Asta) Logic ───
+        COMBUST_ORBS = {
+            "Moon": 12,
+            "Mars": 17,
+            "Mercury": 14,
+            "Jupiter": 11,
+            "Venus": 10,
+            "Saturn": 15
+        }
+        
+        sun_lon = planets.get("Sun", {}).get("longitude", 0)
+        for p_name in planets:
+            planets[p_name]["is_combust"] = False
+            if p_name in COMBUST_ORBS:
+                p_lon = planets[p_name]["longitude"]
+                diff = min((p_lon - sun_lon) % 360, (sun_lon - p_lon) % 360)
+                if diff <= COMBUST_ORBS[p_name]:
+                    planets[p_name]["is_combust"] = True
         # Generate detailed Vedic descriptions
         generate_vedic_readings(planets, houses)
 
@@ -537,7 +553,7 @@ def calculate_sade_sati(planets, jd):
     # Get current Saturn position (Transit)
     # We use roughly constant flags for recent transits
     swe.set_sid_mode(swe.SIDM_LAHIRI)
-    sat_pos = swe.calc_ut(jd, swe.SATURN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)
+    sat_pos = swe.calc_ut(jd, swe.SATURN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED)
     sat_lon = float(sat_pos[0][0])
     sat_sign_idx = int(sat_lon / 30) % 12
 
@@ -592,7 +608,7 @@ def calculate_sade_sati_life_cycle(planets, birth_jd):
     start_jd = None
 
     def get_status(jd):
-        pos = swe.calc_ut(jd, swe.SATURN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)
+        pos = swe.calc_ut(jd, swe.SATURN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED)
         s_lon = float(pos[0][0])
         s_idx = int(s_lon / 30) % 12
         d = (s_idx - moon_sign_idx + 12) % 12
