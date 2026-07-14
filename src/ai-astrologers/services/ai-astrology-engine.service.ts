@@ -31,7 +31,7 @@ export class AiAstrologyEngineService {
     3. **USE NAME NATURALLY**: You may occasionally use the user's name in the conversation, but DO NOT use it in every single response. DO NOT start every response with a greeting like "Namaste" or "Hello". Start directly with the answer.
     4. **CONCISE RESPONSES**: Keep responses between 80-120 words. Focus on quality over quantity. Do NOT write long essays or repetitive explanations.
     5. **NO SYMBOLS OR FORMATTING**: NEVER use markdown symbols like *, #, **, ###, or bullet points. Output ONLY clean, plain text. No bold, no headers, no lists. This is critical for a human-like conversational feel.
-    6. **ENGAGE**: Always end with ONE short follow-up question to keep the conversation going (e.g., "Would you like to know how your career might be affected by this?").
+    6. **ENGAGE**: Ask ONE short follow-up question ONLY when needed to clarify their situation or guide the reading. Do NOT end every single message with a repetitive follow-up question.
     
     🎨 RESPONSE STYLE (MANDATORY):
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -426,12 +426,12 @@ Remedies → Behavioral, mindset, and energy-based guidance
         if (msg.includes('money') || msg.includes('finance') || msg.includes('wealth') || msg.includes('rich') || msg.includes('investment') || msg.includes('loan')
             || msg.includes('paisa') || msg.includes('paise') || msg.includes('dhan') || msg.includes('ameer') || msg.includes('garib') || msg.includes('udhaar') || msg.includes('karj')) return 'finance';
 
-        // Daily / Horoscope
-        if (msg.includes('today') || msg.includes('daily') || msg.includes('horoscope') || msg.includes('aaj') || msg.includes('tomorrow') || msg.includes('day')) return 'daily';
-
         // Education — English + Hinglish
         if (msg.includes('math') || msg.includes('science') || msg.includes('study') || msg.includes('learn') || msg.includes('exam') || msg.includes('education') || msg.includes('college') || msg.includes('school') || msg.includes('intelligence') || msg.includes('mind') || msg.includes('brain')
             || msg.includes('padhai') || msg.includes('padhna') || msg.includes('result') || msg.includes('pass') || msg.includes('fail') || msg.includes('imtihan')) return 'education';
+
+        // Daily / Horoscope
+        if (msg.includes('today') || msg.includes('daily') || msg.includes('horoscope') || msg.includes('aaj') || msg.includes('tomorrow')) return 'daily';
 
         // Casual greeting
         if (msg.match(/(hi|hello|hey|greetings|namaste|pranam|how are you|kya haal|wassup|good morning|good evening|thanks|thank you)/i) && msg.split(' ').length < 10) return 'casual';
@@ -989,61 +989,63 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
             });
 
             if (completion.choices[0].message.tool_calls) {
-                const toolCall = completion.choices[0].message.tool_calls[0] as any;
-                if (toolCall.type === 'function' && toolCall.function.name === 'calculate_astrology_matching') {
-                    this.logger.log(`🛠️ [AI Engine] Tool call triggered: calculate_astrology_matching`);
-                    const args = JSON.parse(toolCall.function.arguments);
+                this.logger.log(`🛠️ [AI Engine] Tool calls triggered: ${completion.choices[0].message.tool_calls.length}`);
+                initialMessages.push(completion.choices[0].message);
 
-                    let toolResponseStr = "Error calculating chart.";
-                    try {
-                        const coords = await this.astronomyService.geocodePlaceOfBirth(args.placeOfBirth);
-                        // Derive timezone from longitude (standard formula: lon / 15, rounded to nearest 0.5)
-                        const secondTzone = Math.round((coords.lon / 15) * 2) / 2;
-                        const primaryTzone = lon ? Math.round((parseFloat(lon) / 15) * 2) / 2 : 5.5;
-                        const bInput = {
-                            date: userBirthDetails.dateOfBirth,
-                            time: userBirthDetails.timeOfBirth || '12:00',
-                            lat: lat ? parseFloat(lat) : 28.6139,
-                            lon: lon ? parseFloat(lon) : 77.2090,
-                            tzone: primaryTzone
-                        };
-                        const gInput = {
-                            date: args.dateOfBirth,
-                            time: args.timeOfBirth || '12:00',
-                            lat: coords.lat,
-                            lon: coords.lon,
-                            tzone: secondTzone
-                        };
-                        
-                        // Calculate Match
-                        const matchResult = await this.astronomyService.matchHoroscope(bInput, gInput);
-                        
-                        // Calculate their chart
-                        const secondChart = await this.astronomyService.calculateAllData(
-                            args.dateOfBirth, args.timeOfBirth, String(coords.lat), String(coords.lon), secondTzone
-                        );
-                        
-                        toolResponseStr = JSON.stringify({
-                            matchScore: matchResult?.total_points || 0,
-                            matchDetails: matchResult,
-                            secondaryPersonChart: {
-                                ascendant: secondChart?.kundli?.ascendant,
-                                planets: secondChart?.kundli?.planets,
-                                dashas: secondChart?.dasha?.current
-                            }
+                for (const toolCall of completion.choices[0].message.tool_calls) {
+                    if (toolCall.type === 'function' && toolCall.function.name === 'calculate_astrology_matching') {
+                        const args = JSON.parse(toolCall.function.arguments);
+
+                        let toolResponseStr = "Error calculating chart.";
+                        try {
+                            const coords = await this.astronomyService.geocodePlaceOfBirth(args.placeOfBirth);
+                            // Derive timezone from longitude (standard formula: lon / 15, rounded to nearest 0.5)
+                            const secondTzone = Math.round((coords.lon / 15) * 2) / 2;
+                            const primaryTzone = lon ? Math.round((parseFloat(lon) / 15) * 2) / 2 : 5.5;
+                            const bInput = {
+                                date: userBirthDetails.dateOfBirth,
+                                time: userBirthDetails.timeOfBirth || '12:00',
+                                lat: lat ? parseFloat(lat) : 28.6139,
+                                lon: lon ? parseFloat(lon) : 77.2090,
+                                tzone: primaryTzone
+                            };
+                            const gInput = {
+                                date: args.dateOfBirth,
+                                time: args.timeOfBirth || '12:00',
+                                lat: coords.lat,
+                                lon: coords.lon,
+                                tzone: secondTzone
+                            };
+                            
+                            // Calculate Match
+                            const matchResult = await this.astronomyService.matchHoroscope(bInput, gInput);
+                            
+                            // Calculate their chart
+                            const secondChart = await this.astronomyService.calculateAllData(
+                                args.dateOfBirth, args.timeOfBirth, String(coords.lat), String(coords.lon), secondTzone
+                            );
+                            
+                            toolResponseStr = JSON.stringify({
+                                matchScore: matchResult?.total_points || 0,
+                                matchDetails: matchResult,
+                                secondaryPersonChart: {
+                                    ascendant: secondChart?.kundli?.ascendant,
+                                    planets: secondChart?.kundli?.planets,
+                                    dashas: secondChart?.dasha?.current
+                                }
+                            });
+                            this.logger.log(`🛠️ [AI Engine] Tool data successfully retrieved for ${args.name}`);
+                        } catch (e) {
+                            this.logger.error(`🛠️ [AI Engine] Tool error: ${e.message}`);
+                        }
+
+                        initialMessages.push({
+                            role: "tool",
+                            tool_call_id: toolCall.id,
+                            content: toolResponseStr
                         });
-                        this.logger.log(`🛠️ [AI Engine] Tool data successfully retrieved for ${args.name}`);
-                    } catch (e) {
-                        this.logger.error(`🛠️ [AI Engine] Tool error: ${e.message}`);
                     }
-
-                    initialMessages.push(completion.choices[0].message);
-                    initialMessages.push({
-                        role: "tool",
-                        tool_call_id: toolCall.id,
-                        content: toolResponseStr
-                    });
-
+                }
                     this.logger.log(`🚀 [AI Engine] Re-prompting OpenAI with Tool Data...`);
                     completion = await this.openai.chat.completions.create({
                         model: this.MODEL_NAME,
@@ -1051,9 +1053,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                         max_tokens: 800,
                         temperature: 0.5
                     });
-                }
             }
-
             const openaiEndTime = Date.now();
             this.logger.log(`✅ [AI Engine] OpenAI responded in ${openaiEndTime - openaiStartTime}ms`);
 
