@@ -5,14 +5,15 @@ import { AstronomyService } from './astronomy.service';
 import { HoroscopeService } from '../../horoscope/horoscope.service'; // ✅ Added from Doc1
 import { LalKitabSettingsService } from '../../lal-kitab-settings/lal-kitab-settings.service';
 import { AstrologyContentService } from '../../astrology/services/astrology-content.service';
-import { Inject, forwardRef } from '@nestjs/common';
+import { Inject, forwardRef, OnModuleDestroy } from '@nestjs/common';
 
 @Injectable()
-export class AiAstrologyEngineService {
+export class AiAstrologyEngineService implements OnModuleDestroy {
     private readonly logger = new Logger(AiAstrologyEngineService.name);
     private openai: OpenAI;
     private readonly MODEL_NAME = 'gpt-4o';
     private readonly VOICE_MODEL_NAME = 'gpt-4o-mini';
+    private cleanupInterval: NodeJS.Timeout;
 
     public getVoiceModelName(): string {
         return this.VOICE_MODEL_NAME;
@@ -188,6 +189,29 @@ Respond with ONLY the JSON object. No preamble.`,
             this.openai = new OpenAI({ apiKey: 'MISSING_API_KEY' });
         } else {
             this.openai = new OpenAI({ apiKey });
+        }
+
+        // Auto-cleanup stale Chinese cache entries every 1 hour
+        this.cleanupInterval = setInterval(() => this.cleanupPersonalChineseCache(), 60 * 60 * 1000);
+    }
+
+    onModuleDestroy() {
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+        }
+    }
+
+    private cleanupPersonalChineseCache() {
+        const now = Date.now();
+        let evicted = 0;
+        for (const [key, value] of this.personalChineseCache.entries()) {
+            if (now - value.timestamp >= 24 * 60 * 60 * 1000) {
+                this.personalChineseCache.delete(key);
+                evicted++;
+            }
+        }
+        if (evicted > 0) {
+            this.logger.log(`🧹 [Personal Chinese Cache] Evicted ${evicted} stale entries.`);
         }
     }
 
@@ -1782,6 +1806,12 @@ IMPORTANT:
 
             const result = JSON.parse(completion.choices[0].message.content || '{}');
             
+            // Safety Net: Max 1000 entries to prevent memory leak during traffic spikes
+            if (this.personalChineseCache.size >= 1000) {
+                const oldestKey = this.personalChineseCache.keys().next().value;
+                if (oldestKey) this.personalChineseCache.delete(oldestKey);
+            }
+
             // Save to cache
             this.personalChineseCache.set(cacheKey, { timestamp: Date.now(), data: result });
             
