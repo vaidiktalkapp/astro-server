@@ -145,7 +145,7 @@ export class AiVoiceService {
       this.logger.error(`❌ Failed to create AI Call Session for user ${userId}`);
     }
     // 5. Determine Language
-    const callLanguage = language || (aiProfile.languages?.[0] || 'English');
+    const callLanguage = language || (aiProfile.languages?.[0] || 'Hindi');
 
     // ✅ NEW: Look for a recently disconnected call within 2 minutes to inject Context (reconnection)
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
@@ -449,34 +449,48 @@ ${previousTranscriptContext}
       this.logger.debug(`📦 Artifact found in webhook: ${JSON.stringify(message?.artifact || payload?.artifact)}`);
     }
 
-    if (type === 'end-of-call-report' || type === 'call.ended') {
       const vapiCallId = call?.id;
       
-      // SUPER ROBUST EXTRACTION: Check message root, message.artifact, and call root
-      let recordingUrl = message?.recordingUrl || message?.artifact?.recordingUrl || call?.recordingUrl || payload?.artifact?.recordingUrl;
-      let transcript = message?.transcript || message?.artifact?.transcript || call?.transcript || payload?.artifact?.transcript;
-      
-      // If transcript is an array (sometimes Vapi sends it as message list), join it
-      if (Array.isArray(transcript)) {
-        transcript = transcript.map((m: any) => `${m.role === 'assistant' ? 'AI' : 'User'}: ${m.content}`).join('\n');
-      }
-
-      const startedAt = message?.startedAt || call?.startedAt;
-      const endedAt = message?.endedAt || call?.endedAt;
-      const endedReason = message?.endedReason || call?.endedReason;
-      
-      // ✅ ULTRA ROBUST DURATION: Prioritize Vapi's internal call duration
-      const durationFromPayload = 
-        message?.durationSeconds || 
-        message?.duration || 
-        call?.duration || 
-        message?.artifact?.durationSeconds || 
-        payload?.artifact?.durationSeconds;
-
       if (!vapiCallId) {
         this.logger.warn(`⚠️ Vapi Webhook missing Call ID. Payload Type: ${type}`);
         return;
       }
+
+      // ✅ ALWAYS save vapiCallId early if we can match the session, so the Kill Switch works if socket drops
+      const sessionIdFromMeta = call?.metadata?.sessionId || payload?.metadata?.sessionId;
+      if (sessionIdFromMeta && vapiCallId) {
+        await this.sessionModel.updateOne(
+          { sessionId: sessionIdFromMeta, vapiCallId: { $exists: false } },
+          { $set: { vapiCallId: vapiCallId } }
+        );
+      }
+
+      if (type === 'status-update' || type === 'call.started') {
+        this.logger.log(`📞 Vapi Call Started/Updated: ${vapiCallId}`);
+        return;
+      }
+
+      if (type === 'end-of-call-report' || type === 'call.ended') {
+        // SUPER ROBUST EXTRACTION: Check message root, message.artifact, and call root
+        let recordingUrl = message?.recordingUrl || message?.artifact?.recordingUrl || call?.recordingUrl || payload?.artifact?.recordingUrl;
+        let transcript = message?.transcript || message?.artifact?.transcript || call?.transcript || payload?.artifact?.transcript;
+        
+        // If transcript is an array (sometimes Vapi sends it as message list), join it
+        if (Array.isArray(transcript)) {
+          transcript = transcript.map((m: any) => `${m.role === 'assistant' ? 'AI' : 'User'}: ${m.content}`).join('\n');
+        }
+
+        const startedAt = message?.startedAt || call?.startedAt;
+        const endedAt = message?.endedAt || call?.endedAt;
+        const endedReason = message?.endedReason || call?.endedReason;
+        
+        // ✅ ULTRA ROBUST DURATION: Prioritize Vapi's internal call duration
+        const durationFromPayload = 
+          message?.durationSeconds || 
+          message?.duration || 
+          call?.duration || 
+          message?.artifact?.durationSeconds || 
+          payload?.artifact?.durationSeconds;
 
       const session = await this.sessionModel.findOne({
         $or: [
