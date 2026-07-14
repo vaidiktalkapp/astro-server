@@ -355,7 +355,7 @@ ${previousTranscriptContext}
       voice: {
         provider: finalProvider as any,
         voiceId: finalVoiceId,
-        speed: 1.15,
+        speed: 1.25,
       },
       silenceTimeoutSeconds: 3600,
 
