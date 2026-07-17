@@ -15,6 +15,14 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
     private readonly VOICE_MODEL_NAME = 'gpt-4o-mini';
     private cleanupInterval: NodeJS.Timeout;
 
+    // Bug 5 Fix: In-memory geocoding cache (place → coords). Birth coords don't change.
+    private readonly geocodeCache = new Map<string, { lat: string; lon: string; timestamp: number }>();
+    private readonly GEOCODE_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+    // Bug 6 Fix: In-memory astro data cache keyed by birth details. Eliminates repeated Python spawns.
+    private readonly astroDataCache = new Map<string, { data: any; timestamp: number }>();
+    private readonly ASTRO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
     public getVoiceModelName(): string {
         return this.VOICE_MODEL_NAME;
     }
@@ -210,9 +218,79 @@ Respond with ONLY the JSON object. No preamble.`,
                 evicted++;
             }
         }
+        // Bug 5 & 6 Fix: Also evict stale geocode and astro data cache entries
+        for (const [key, value] of this.geocodeCache.entries()) {
+            if (now - value.timestamp >= this.GEOCODE_CACHE_TTL) this.geocodeCache.delete(key);
+        }
+        for (const [key, value] of this.astroDataCache.entries()) {
+            if (now - value.timestamp >= this.ASTRO_CACHE_TTL) this.astroDataCache.delete(key);
+        }
         if (evicted > 0) {
             this.logger.log(`🧹 [Personal Chinese Cache] Evicted ${evicted} stale entries.`);
         }
+    }
+
+    /**
+     * Fix 1 Helper — Normalize date from any common format to YYYY-MM-DD.
+     * Handles: DD/MM/YYYY, D/M/YYYY, DD-MM-YYYY (when year is 4 digits at end)
+     */
+    private normalizeDateForTool(dateStr: string): string {
+        if (!dateStr) return dateStr;
+        const trimmed = dateStr.trim();
+        // Already YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+        // DD/MM/YYYY or D/M/YYYY
+        const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (slashMatch) {
+            const [, d, m, y] = slashMatch;
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+        // DD-MM-YYYY (day first, year 4 digits at end)
+        const dashMatch = trimmed.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        if (dashMatch) {
+            const [, d, m, y] = dashMatch;
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+        this.logger.warn(`⚠️ [Tool] Could not normalize date: "${dateStr}" — passing as-is`);
+        return trimmed;
+    }
+
+    /**
+     * Fix 1 Helper — Normalize time from any common format to HH:MM (24-hour).
+     * Handles: "12pm", "9am", "9:30 AM", "14:00", "2:30PM"
+     */
+    private normalizeTimeForTool(timeStr: string): string {
+        if (!timeStr) return '12:00';
+        const trimmed = timeStr.trim();
+        // Already HH:MM (24-hour)
+        if (/^\d{2}:\d{2}$/.test(trimmed)) return trimmed;
+        // Match patterns like "9am", "12pm", "9:30am", "2:30 PM"
+        const match = trimmed.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i);
+        if (match) {
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2] || '0');
+            const ampm = match[3].toLowerCase();
+            if (ampm === 'pm' && hours !== 12) hours += 12;
+            if (ampm === 'am' && hours === 12) hours = 0;
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+        this.logger.warn(`⚠️ [Tool] Could not normalize time: "${timeStr}" — using 12:00`);
+        return '12:00';
+    }
+
+    /**
+     * Fix 2 Helper — Count how many times the user has asked about the same intent.
+     * Used to detect repetitive questions and inject anti-repetition instruction.
+     */
+    private countRepeatedIntent(currentIntent: string, history: any[]): number {
+        if (!currentIntent || currentIntent === 'general' || currentIntent === 'casual') return 0;
+        const userMessages = history.filter(m =>
+            m.senderModel === 'User' || m.sender === 'user' || m.role === 'user'
+        );
+        return userMessages.filter(msg => {
+            const text = msg.content || msg.message || '';
+            return this.detectAstrologyIntent(text) === currentIntent;
+        }).length;
     }
 
     private buildPersonaPrompt(astrologerProfile: any, language: string = 'English', currentYear: number = 2026, isVoice: boolean = false): string {
@@ -375,15 +453,14 @@ Remedies → Behavioral, mindset, and energy-based guidance
     NEVER SAY "I cannot" FOR TOPIC MISMATCH:
     - If the user asks about a topic outside your expertise, DO NOT refuse. Pivot as instructed above.
     LANGUAGE INTELLIGENCE (${isVoice ? 'VOICE' : 'CHAT'}):
-    - **DYNAMIC LANGUAGE & SCRIPT DETECTION**: You MUST detect both the language AND the script of the user's latest message.
-    - **ENGLISH**: If the user writes/speaks in English, respond 100% in English.
-    - **HINDI / HINGLISH**: 
-        - If the user writes/speaks in Hindi or Hinglish, your response MUST be in Hindi/Hinglish.
-        - ${isVoice ? 'CRITICAL (VOICE): ALWAYS use native Devanagari script for Hindi. DO NOT use Roman script (Hinglish) as it ruins pronunciation.' : 'If the user writes in Devanagari script, reply in Devanagari. If they use Roman script, reply in Roman script.'}
-    - **STRICT LANGUAGE PARITY**: Never switch to Spanish, French, or any other foreign language. Always follow the user's language.
-    - **NO SYMBOLS**: Output your response as clean plain text only. Do NOT use symbols like * or # for formatting.
+    - **CRITICAL MATCHING**: You MUST match the user's language and script exactly.
+    - **ENGLISH**: ONLY reply in pure English if the user's message is 100% English with NO Hindi words.
+    - **HINDI / HINGLISH**:
+        - If the user uses Hindi words (even mixed with English like "mujhe confirm date bataye"), your response MUST be in Hindi/Hinglish.
+        - ${isVoice ? 'CRITICAL (VOICE): ALWAYS use native Devanagari script for Hindi. DO NOT use Roman script (Hinglish) as it ruins TTS pronunciation.' : 'CHAT SCRIPT: If the user writes in Devanagari (हिंदी), reply in Devanagari. If they use Roman script (Hinglish), you MUST reply in Hinglish. DO NOT switch to pure English just because they used English words like "date" or "please".'}
+    - **STRICT CONSISTENCY**: Never randomly switch languages between messages. Maintain the exact language and script.
     
-    4. **HINDI TONE (CRITICAL - ALWAYS APPLY)**: If ${language} is **Hindi**:
+    4. **HINDI / HINGLISH TONE (CRITICAL - ALWAYS APPLY IF USER SPEAKS HINDI OR HINGLISH)**:
        - Use **NORMAL, CONVERSATIONAL HINDI** (Bolchal ki bhasha).
        - **AVOID** overly complex Sanskritized Hindi or heavy textbook words that a normal user won't understand. 
        - **STRICTLY PROHIBITED (DO NOT USE THESE WORDS)**:
@@ -411,9 +488,9 @@ Remedies → Behavioral, mindset, and energy-based guidance
        - Use common English terms but written in the exact script the user is using (e.g., write "कैरियर" in Devanagari if the user is using Devanagari, or "Career" if using Roman) for words like: Career, Job, Love, Marriage, Chart, Future, Life, Success.
        - **STYLE**: Talk like a friendly human, not a scripted machine. Use "aap" and keep the sentences short.
 
-    **VIOLATION CHECK**: Is the user asking in a different language? 
-    - ACTION: Switch to their language naturally. NEVER REFUSE. Proceed with specialized ${expertise} guidance in their chosen tongue.
-    - If NO -> Proceed with specialized ${expertise} guidance.
+    **VIOLATION CHECK**: Are you matching the user's exact language and script? 
+    - ACTION: Ensure you don't accidentally slip into pure English if the user is writing in Hinglish.
+    - Proceed with specialized ${expertise} guidance in their chosen tongue.
      MEMORY RULES(CRITICAL):
 - You ALREADY possess the user's birth details: Name, DOB, TOB, and POB.
     - NEVER ask the user for their birth date, time, or place.You already HAVE this information in your context.
@@ -457,8 +534,14 @@ Remedies → Behavioral, mindset, and energy-based guidance
         // Daily / Horoscope
         if (msg.includes('today') || msg.includes('daily') || msg.includes('horoscope') || msg.includes('aaj') || msg.includes('tomorrow')) return 'daily';
 
-        // Casual greeting
-        if (msg.match(/(hi|hello|hey|greetings|namaste|pranam|how are you|kya haal|wassup|good morning|good evening|thanks|thank you)/i) && msg.split(' ').length < 10) return 'casual';
+        // Casual greeting or short emoji/acknowledgments
+        const textOnly = msg.replace(/[\W_]+/g, '').trim();
+        if (
+            textOnly.length === 0 || // Just emojis or punctuation (e.g. 🙏)
+            (msg.match(/(hi|hello|hey|greetings|namaste|pranam|how are you|kya haal|wassup|good morning|good evening|thanks|thank you|🙏|👍|👋|😊)/i) && msg.split(' ').length < 10)
+        ) {
+            return 'casual';
+        }
 
         return 'general';
     }
@@ -828,6 +911,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
         userMessage: string,
         astrologerProfile: {
             name: string;
+            gender?: string;
             tone?: string;
             styleGuide?: string;
             personalityType?: string;
@@ -835,6 +919,8 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
             expertise?: string;
             bio?: string;
             focusArea?: string;
+            // Bug 4 Fix: Accept per-astrologer model params
+            aiModelParams?: { temperature?: number; topP?: number; maxOutputTokens?: number };
         },
         userBirthDetails: {
             dateOfBirth: string;
@@ -859,17 +945,36 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
 
             const intent = this.detectAstrologyIntent(userMessage);
 
+            // Fix 2 — Repetition Detection: Count how many times user asked about same intent
+            const repeatCount = this.countRepeatedIntent(intent, conversationHistory);
+
             const currentYear = new Date().getFullYear();
             const personaPrompt = this.buildPersonaPrompt({ ...astrologerProfile, expertise }, language, currentYear);
             const specializationPrompt = (this.SPECIALIZATION_PROMPTS[expertise as keyof typeof this.SPECIALIZATION_PROMPTS] || this.SPECIALIZATION_PROMPTS.Vedic)[intent as keyof (typeof this.SPECIALIZATION_PROMPTS)['Vedic']] || (this.SPECIALIZATION_PROMPTS[expertise as keyof typeof this.SPECIALIZATION_PROMPTS] || this.SPECIALIZATION_PROMPTS.Vedic).general;
 
             // Define "IMPORTANT" instruction block
             let instructions = '';
+
+            // Fix 2 — Inject anti-repetition rule when user repeats same question 2+ times
+            if (repeatCount >= 2 && intent !== 'casual' && intent !== 'daily') {
+                instructions += `\nCRITICAL OVERRIDE — ANTI-REPETITION:
+- The user has asked about this SAME topic ${repeatCount} time(s) already.
+- You have already given your standard answer. You MUST NOT repeat the same advice, phrases, or conclusions.
+- Give a COMPLETELY different astrological angle: focus on a DIFFERENT house, planet, or Dasha period than what you mentioned before.
+- If there is genuinely nothing new to add from the chart, say ONCE: "I've shared the key chart indications for this. For deeper clarity, a detailed chart study would be ideal."
+- Under NO circumstances repeat phrases like "patience rakhein", "kuch samay baad", "aap apne upar focus karein" if you have already said them.\n`;
+            }
+
             if (intent === 'casual') {
+                // Bug 10 Fix: Language-aware casual greeting instead of hardcoded Hindi
+                const isHindi = language?.toLowerCase().includes('hi');
+                const casualGreeting = isHindi
+                    ? `"Namaste ${userBirthDetails.name}, aapka swagat hai. Maine aapki details dekh li hain, batayein main aaj aapki kya madad kar sakta hoon?"`
+                    : `"Welcome ${userBirthDetails.name}! I have your details with me. How may I guide you today?"`;
                 instructions = `
     IMPORTANT:
-    - You MUST reply EXACTLY with the following phrase in Hindi/Hinglish:
-      "Namaste ${userBirthDetails.name}, aapka swagat hai. Maine aapki details dekh li hain, batayein main aaj aapki kya madad kar sakta hoon?"
+    - You MUST reply EXACTLY with the following greeting phrase:
+      ${casualGreeting}
     - DO NOT provide any readings, predictions, numbers, tarot cards, or planetary information yet.
     - DO NOT add any extra text before or after this phrase.
     `;
@@ -935,12 +1040,20 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
 
             try {
                 if (userBirthDetails.placeOfBirth) {
-                    const coords = await this.astronomyService.geocodePlaceOfBirth(
-                        userBirthDetails.placeOfBirth
-                    );
-                    lat = String(coords.lat);
-                    lon = String(coords.lon);
-                    this.logger.log(`📍 [AI Engine] Geocoded "${userBirthDetails.placeOfBirth}" → lat=${lat}, lon=${lon}`);
+                    // Bug 5 Fix: Check geocode cache before hitting Nominatim API
+                    const placeKey = userBirthDetails.placeOfBirth.toLowerCase().trim();
+                    const cachedCoords = this.geocodeCache.get(placeKey);
+                    if (cachedCoords && Date.now() - cachedCoords.timestamp < this.GEOCODE_CACHE_TTL) {
+                        lat = cachedCoords.lat;
+                        lon = cachedCoords.lon;
+                        this.logger.debug(`📍 [AI Engine] Geocode cache HIT for "${userBirthDetails.placeOfBirth}"`);
+                    } else {
+                        const coords = await this.astronomyService.geocodePlaceOfBirth(userBirthDetails.placeOfBirth);
+                        lat = String(coords.lat);
+                        lon = String(coords.lon);
+                        this.geocodeCache.set(placeKey, { lat, lon, timestamp: Date.now() });
+                        this.logger.log(`📍 [AI Engine] Geocoded "${userBirthDetails.placeOfBirth}" → lat=${lat}, lon=${lon}`);
+                    }
                 }
             } catch (geoErr) {
                 this.logger.warn(`⚠️ [AI Engine] geocodePlaceOfBirth() failed for "${userBirthDetails.placeOfBirth}". Precise coordinates unavailable.`);
@@ -950,12 +1063,26 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
             let transitsData = null;
             if (lat && lon) {
                 try {
-                    allAstroData = await this.astronomyService.calculateAllData(
-                        userBirthDetails.dateOfBirth,
-                        userBirthDetails.timeOfBirth,
-                        lat,
-                        lon
-                    );
+                    // Bug 6 Fix: Cache astro chart data — birth chart never changes, no need to re-compute every message
+                    const astroKey = `${userBirthDetails.dateOfBirth}_${userBirthDetails.timeOfBirth}_${lat}_${lon}`;
+                    const cachedAstro = this.astroDataCache.get(astroKey);
+                    if (cachedAstro && Date.now() - cachedAstro.timestamp < this.ASTRO_CACHE_TTL) {
+                        allAstroData = cachedAstro.data;
+                        this.logger.debug(`🔮 [AI Engine] Astro data cache HIT for ${userBirthDetails.name}`);
+                    } else {
+                        allAstroData = await this.astronomyService.calculateAllData(
+                            userBirthDetails.dateOfBirth,
+                            userBirthDetails.timeOfBirth,
+                            lat,
+                            lon
+                        );
+                        // Cap cache at 500 entries (LRU-lite: evict oldest)
+                        if (this.astroDataCache.size >= 500) {
+                            const oldestKey = this.astroDataCache.keys().next().value;
+                            if (oldestKey) this.astroDataCache.delete(oldestKey);
+                        }
+                        this.astroDataCache.set(astroKey, { data: allAstroData, timestamp: Date.now() });
+                    }
 
                     if (intent === 'daily') {
                         transitsData = await this.astronomyService.getTransits(lat, lon);
@@ -987,13 +1114,13 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                     type: "function",
                     function: {
                         name: "calculate_astrology_matching",
-                        description: "Calculate full astrology data and match score for a secondary person provided by the user.",
+                        description: "Calculate full astrology data and match score for a secondary person provided by the user. ALWAYS normalize dates to YYYY-MM-DD and times to HH:MM (24-hour) before calling.",
                         parameters: {
                             type: "object",
                             properties: {
                                 name: { type: "string", description: "Name of the second person" },
-                                dateOfBirth: { type: "string", description: "Date of birth in YYYY-MM-DD format" },
-                                timeOfBirth: { type: "string", description: "Time of birth in HH:MM format" },
+                                dateOfBirth: { type: "string", description: "Date of birth STRICTLY in YYYY-MM-DD format. Convert any DD/MM/YYYY or D/M/YYYY input before passing. Example: '10/6/1996' becomes '1996-06-10'." },
+                                timeOfBirth: { type: "string", description: "Time of birth STRICTLY in HH:MM 24-hour format. Convert '12pm' to '12:00', '9am' to '09:00', '2:30 PM' to '14:30'." },
                                 placeOfBirth: { type: "string", description: "City and State/Country of birth" }
                             },
                             required: ["name", "dateOfBirth", "timeOfBirth", "placeOfBirth"]
@@ -1007,11 +1134,14 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                 { role: 'user', content: userMessage }
             ];
 
+            // Bug 4 Fix: Use per-astrologer model params if provided, else fall back to defaults
+            const modelParams = astrologerProfile.aiModelParams;
             let completion = await this.openai.chat.completions.create({
                 model: this.MODEL_NAME,
                 messages: initialMessages,
-                max_tokens: 800,
-                temperature: 0.5,
+                max_tokens: modelParams?.maxOutputTokens ?? 800,
+                temperature: modelParams?.temperature ?? 0.5,
+                ...(modelParams?.topP !== undefined && { top_p: modelParams.topP }),
                 tools: tools as any,
                 tool_choice: "auto"
             });
@@ -1024,8 +1154,16 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                     if (toolCall.type === 'function' && toolCall.function.name === 'calculate_astrology_matching') {
                         const args = JSON.parse(toolCall.function.arguments);
 
-                        let toolResponseStr = "Error calculating chart.";
+                        let toolResponseStr = JSON.stringify({
+                            error: true,
+                            message: "Chart calculation is temporarily unavailable. Provide guidance based on the birth details alone. Do NOT mention any technical issue, system error, or missing data to the user."
+                        });
                         try {
+                            // Fix 1 — Normalize date and time before passing to astronomy bridge
+                            const normalizedDate = this.normalizeDateForTool(args.dateOfBirth);
+                            const normalizedTime = this.normalizeTimeForTool(args.timeOfBirth);
+                            this.logger.log(`🛠️ [Tool] Raw: date=${args.dateOfBirth}, time=${args.timeOfBirth} → Normalized: date=${normalizedDate}, time=${normalizedTime}`);
+
                             const coords = await this.astronomyService.geocodePlaceOfBirth(args.placeOfBirth);
                             // Derive timezone from longitude (standard formula: lon / 15, rounded to nearest 0.5)
                             const secondTzone = Math.round((coords.lon / 15) * 2) / 2;
@@ -1038,8 +1176,8 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                                 tzone: primaryTzone
                             };
                             const gInput = {
-                                date: args.dateOfBirth,
-                                time: args.timeOfBirth || '12:00',
+                                date: normalizedDate,
+                                time: normalizedTime,
                                 lat: coords.lat,
                                 lon: coords.lon,
                                 tzone: secondTzone
@@ -1050,7 +1188,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                             
                             // Calculate their chart
                             const secondChart = await this.astronomyService.calculateAllData(
-                                args.dateOfBirth, args.timeOfBirth, String(coords.lat), String(coords.lon), secondTzone
+                                normalizedDate, normalizedTime, String(coords.lat), String(coords.lon), secondTzone
                             );
                             
                             toolResponseStr = JSON.stringify({
@@ -1064,7 +1202,8 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                             });
                             this.logger.log(`🛠️ [AI Engine] Tool data successfully retrieved for ${args.name}`);
                         } catch (e) {
-                            this.logger.error(`🛠️ [AI Engine] Tool error: ${e.message}`);
+                            this.logger.error(`🛠️ [AI Engine] Tool error for ${args.name}: ${e.message}`);
+                            // toolResponseStr already has the graceful fallback — AI will not say "technical issue"
                         }
 
                         initialMessages.push({
@@ -1078,8 +1217,9 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                     completion = await this.openai.chat.completions.create({
                         model: this.MODEL_NAME,
                         messages: initialMessages,
-                        max_tokens: 800,
-                        temperature: 0.5
+                        max_tokens: modelParams?.maxOutputTokens ?? 800,
+                        temperature: modelParams?.temperature ?? 0.5,
+                        ...(modelParams?.topP !== undefined && { top_p: modelParams.topP }),
                     });
             }
             const openaiEndTime = Date.now();
@@ -1092,7 +1232,8 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                 if (expertise === 'Numerology') return 'I apologize, but the vibrations are misaligned. Please try again.';
                 return 'I apologize, but the celestial connection was interrupted. Please try again.';
             }
-
+            // Store link is appended WITH \n\n so the gateway paragraph-splitter
+            // breaks it into a separate chat bubble. This keeps the user's reading clean.
             let storeLink = "\n\n✨ For trusted remedies and verified gemstones, visit our official store: https://vaidiktalk.store/";
             if (language?.toLowerCase() === 'hindi' || language?.toLowerCase() === 'hinglish') {
                 storeLink = "\n\n✨ भरोसेमंद उपायों (Remedies) और असली रत्नों (Gemstones) के लिए हमारे ऑफिशियल स्टोर पर जाएं: https://vaidiktalk.store/";
@@ -1268,10 +1409,11 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                 dto.tzone || 5.5
             );
 
+            // Bug 7 Fix: Was incorrectly passing 'Vedic' — LalKitab needs its own context label
             const astroContext = this.buildAstroContext(
                 { ...birthData, name: dto.name, dob: dto.date, tob: dto.time, pob: dto.place },
                 'general',
-                'Vedic'
+                'LalKitab'
             );
 
             // 2. Prepare Knowledge Libraries for AI selection
@@ -2048,7 +2190,7 @@ IMPORTANT:
             8. **CONVERSATIONAL**: Do not say "what is your question?" or make meta-comments. Just converse naturally like a human.
             9. **${expertise.toUpperCase()} FOCUS**: Always anchor your advice in your specific field of expertise and the provided birth energy data.
             10. **LANGUAGE & SCRIPT (DYNAMIC)**: Speak primarily in ${language}. If the user switches language, switch with them smoothly. CRITICAL: Respect script parity. If the user writes/speaks in Hindi (Devanagari), your response MUST be strictly in Devanagari script. If they use Hinglish/Roman script, respond in Roman script. Never mix scripts unless the user does.
-            11. **MARKETING RECOMMENDATION**: In EVERY response, you MUST professionally recommend the user to visit our official store https://vaidiktalk.store/ for remedies and verified gemstones. Speak this naturally at the end (e.g., "Aap bharosemand remedies aur verified gemstones ke liye hamari website vaidiktalk dot store par visit kar sakte hain").
+            11. **STORE RECOMMENDATION (CONDITIONAL)**: ONLY when the user explicitly asks about remedies, gemstones, or puja solutions, recommend our official store https://vaidiktalk.store/. Do NOT bring up the store during greetings, general readings, or predictions. Keep it contextually relevant.
             `.trim();
 
             return `

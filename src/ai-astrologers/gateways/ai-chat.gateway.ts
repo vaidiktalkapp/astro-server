@@ -293,14 +293,16 @@ export class AiChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             const astrologerProfile = {
                 name: aiProfile?.name || 'Astrologer',
-                gender: aiProfile?.gender || 'male', // Added gender
+                gender: aiProfile?.gender || 'male',
                 tone: aiProfile?.tone,
                 styleGuide: aiProfile?.styleGuide,
                 personalityType: aiProfile?.personalityType,
                 systemPromptAddition: aiProfile?.systemPromptAddition,
                 expertise: aiProfile?.expertise,
                 bio: aiProfile?.bio,
-                focusArea: aiProfile?.focusArea
+                focusArea: aiProfile?.focusArea,
+                // Bug 4 Fix (Gateway): aiModelParams was missing here — temperature/tokens were ignored for socket messages
+                aiModelParams: aiProfile?.aiModelParams,
             };
 
             const history = await this.aiChatSessionService.getRecentMessages(sessionId, 10);

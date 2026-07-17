@@ -43,7 +43,7 @@ export class AiChatSessionService implements OnModuleInit {
         this.logger.log('🧹 [AiChatSessionService] Running stale session cleanup...');
 
         try {
-            const STALE_THRESHOLD_MS = 1 * 60 * 1000; // 1 minute of inactivity
+            const STALE_THRESHOLD_MS = 1 * 60 * 1000; // 1 minute of inactivity (billing uses lastMessageAt, not wall clock)
             const now = new Date();
 
             // Find all active AI sessions
@@ -434,6 +434,16 @@ export class AiChatSessionService implements OnModuleInit {
             astrologer.averageSessionDuration = Math.floor(
                 (((astrologer.averageSessionDuration || 0) * (astrologer.totalSessions - 1)) + finalDuration) / astrologer.totalSessions
             );
+            // Bug 8 Fix: Update revenueBreakdown on every session settlement
+            if (!astrologer.revenueBreakdown) {
+                astrologer.revenueBreakdown = { daily: 0, weekly: 0, monthly: 0, yearly: 0 };
+            }
+            if (finalCost > 0) {
+                astrologer.revenueBreakdown.daily = (astrologer.revenueBreakdown.daily || 0) + finalCost;
+                astrologer.revenueBreakdown.weekly = (astrologer.revenueBreakdown.weekly || 0) + finalCost;
+                astrologer.revenueBreakdown.monthly = (astrologer.revenueBreakdown.monthly || 0) + finalCost;
+                astrologer.revenueBreakdown.yearly = (astrologer.revenueBreakdown.yearly || 0) + finalCost;
+            }
             if (userRating) {
                 astrologer.satisfactionScore = (
                     (((astrologer.satisfactionScore || 4.5) * (astrologer.totalSessions - 1)) + userRating) / astrologer.totalSessions
@@ -465,25 +475,19 @@ export class AiChatSessionService implements OnModuleInit {
     }
 
     private calculateQualityScore(content: string): number {
-        let score = 5; // Start from 5 instead of 7
-        
-        // Length checks
-        if (content.length < 50) score -= 2; // Very short
-        else if (content.length > 300) score += 2; // Detailed
-        else if (content.length > 100) score += 1;
+        // Bug 9 Fix: Unified with AiAstrologyEngineService.calculateQualityScore (base 7, clamp 7-10)
+        let score = 7;
 
-        // Language-agnostic indicators of depth (length, structured lists, etc.)
-        if (content.includes('1.') || content.includes('2.')) score += 1;
+        if (content.length > 400) score += 1;
+        else if (content.length > 200) score += 0.5;
+        else if (content.length < 50) score -= 1;
 
-        // Core spiritual/astrological keywords (English & Hindi)
-        if (/vibration|energy|karma|path|destiny|cycle|timing|guidance|remedy|blessing|Graha|Bhava|Dasha|Nakshatra|Yoga|रवि|चंद्र|मंगल|बुध|नक्षत्र|योग|दशा/i.test(content)) {
-            score += 3;
-        } else {
-            // No keywords? That's a bad sign.
-            score -= 1;
-        }
+        if (content.includes('1.') || content.includes('2.') || content.includes('•')) score += 0.5;
 
-        return Math.max(1, Math.min(score, 10)); // Ensure it's between 1 and 10
+        const hasAstroKeywords = /vibration|energy|karma|path|destiny|cycle|timing|guidance|remedy|blessing|Graha|Bhava|Dasha|Nakshatra|Yoga|planet|house|ascendant|रवि|चंद्र|मंगल|बुध|नक्षत्र|योग|दशा/i.test(content);
+        if (hasAstroKeywords) score += 1;
+
+        return Math.min(Math.max(Math.round(score), 7), 10); // Clamp between 7-10
     }
 
     async getSessionDetails(id: string, userId: string): Promise<any> {

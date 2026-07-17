@@ -233,13 +233,16 @@ export class AiAstrologersController {
         // Prepare Astrologer Profile
         const astrologerProfile = {
             name: aiProfile?.name || 'Astrologer',
+            gender: aiProfile?.gender,
             tone: aiProfile?.tone,
             styleGuide: aiProfile?.styleGuide,
             personalityType: aiProfile?.personalityType,
             systemPromptAddition: aiProfile?.systemPromptAddition,
             expertise: aiProfile?.expertise,
             bio: aiProfile?.bio,
-            focusArea: aiProfile?.focusArea
+            focusArea: aiProfile?.focusArea,
+            // Bug 4 Fix: Pass per-astrologer AI model params to the engine
+            aiModelParams: aiProfile?.aiModelParams,
         };
 
         // Fetch History
