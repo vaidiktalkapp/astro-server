@@ -53,6 +53,8 @@ export interface IncomingChatRequestPayload {
       'https://vaidiktalkweb.vercel.app',
       'https://admin.vaidiktalk.com',
       'https://app.vaidiktalk.com',
+      'https://web-vaidik-git-test-server-vadik-talks-projects.vercel.app',
+      'https://vaidik-admin-git-test-server-vadik-talks-projects.vercel.app',
       'https://web-vaidik-main.vercel.app',
       'https://admin-portal-rho-two.vercel.app',
       'https://admin-portal-9x2pjk4h9-rajkumaryadav2749s-projects.vercel.app'
