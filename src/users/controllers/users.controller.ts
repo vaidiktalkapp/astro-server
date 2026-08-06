@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UsersService } from '../services/users.service';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { UpdatePreferencesDto } from '../dto/update-preferences.dto';
+import { CreateSavedProfileDto } from '../dto/create-saved-profile.dto';
 
 interface AuthenticatedRequest extends Request {
   user: { _id: string };
@@ -44,7 +45,7 @@ export class UsersController {
   @Post('profiles')
   async addSavedProfile(
     @Req() req: AuthenticatedRequest,
-    @Body() body: any
+    @Body(new ValidationPipe({ whitelist: true })) body: CreateSavedProfileDto
   ) {
     return this.usersService.addSavedProfile(req.user._id, body);
   }
@@ -53,7 +54,7 @@ export class UsersController {
   async updateSavedProfile(
     @Req() req: AuthenticatedRequest,
     @Param('profileId') profileId: string,
-    @Body() body: any
+    @Body(new ValidationPipe({ whitelist: true })) body: CreateSavedProfileDto
   ) {
     return this.usersService.updateSavedProfile(req.user._id, profileId, body);
   }

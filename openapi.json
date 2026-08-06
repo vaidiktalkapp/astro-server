@@ -2811,6 +2811,16 @@
       "post": {
         "operationId": "UsersController_addSavedProfile",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedProfileDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -2834,6 +2844,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedProfileDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": ""
@@ -5147,6 +5167,141 @@
         ]
       }
     },
+    "/api/v1/admin/manual-horoscopes/list": {
+      "get": {
+        "operationId": "ManualHoroscopeController_listOverrides",
+        "parameters": [
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateIdentifier",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ManualHoroscope"
+        ]
+      }
+    },
+    "/api/v1/admin/manual-horoscopes": {
+      "get": {
+        "operationId": "ManualHoroscopeController_getOverride",
+        "parameters": [
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sign",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateIdentifier",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ManualHoroscope"
+        ]
+      },
+      "post": {
+        "operationId": "ManualHoroscopeController_saveOverride",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ManualHoroscope"
+        ]
+      },
+      "delete": {
+        "operationId": "ManualHoroscopeController_deleteOverride",
+        "parameters": [
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sign",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateIdentifier",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ManualHoroscope"
+        ]
+      }
+    },
     "/api/v1/admin/astrologers": {
       "get": {
         "operationId": "AdminAstrologersController_getAllAstrologers",
@@ -7359,6 +7514,20 @@
         ]
       }
     },
+    "/api/v1/upload/document": {
+      "post": {
+        "operationId": "UploadController_uploadDocument",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Upload"
+        ]
+      }
+    },
     "/api/v1/upload/delete": {
       "delete": {
         "operationId": "UploadController_deleteFile",
@@ -7675,6 +7844,38 @@
           }
         },
         "summary": "Get general Zodiac Love Horoscope",
+        "tags": [
+          "Astrology"
+        ]
+      }
+    },
+    "/api/v1/astrology/daily-horoscope": {
+      "get": {
+        "operationId": "AstrologyController_getDailyHoroscopeAllSigns",
+        "parameters": [
+          {
+            "name": "period",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Return Daily Horoscope Data"
+          }
+        },
+        "summary": "Get daily horoscope for all 12 signs",
         "tags": [
           "Astrology"
         ]
@@ -13505,6 +13706,827 @@
           "PdfPricing"
         ]
       }
+    },
+    "/api/v1/testimonials": {
+      "get": {
+        "operationId": "TestimonialsController_findAllActive",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Testimonials"
+        ]
+      },
+      "post": {
+        "operationId": "TestimonialsController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Testimonials"
+        ]
+      }
+    },
+    "/api/v1/testimonials/admin": {
+      "get": {
+        "operationId": "TestimonialsController_findAllForAdmin",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Testimonials"
+        ]
+      }
+    },
+    "/api/v1/testimonials/{id}": {
+      "put": {
+        "operationId": "TestimonialsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Testimonials"
+        ]
+      },
+      "delete": {
+        "operationId": "TestimonialsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Testimonials"
+        ]
+      }
+    },
+    "/api/v1/blogs/categories": {
+      "post": {
+        "operationId": "BlogsController_createCategory",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      },
+      "get": {
+        "operationId": "BlogsController_getCategories",
+        "parameters": [
+          {
+            "name": "activeOnly",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      }
+    },
+    "/api/v1/blogs/categories/{id}": {
+      "put": {
+        "operationId": "BlogsController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      },
+      "delete": {
+        "operationId": "BlogsController_deleteCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      }
+    },
+    "/api/v1/blogs": {
+      "post": {
+        "operationId": "BlogsController_createBlog",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      },
+      "get": {
+        "operationId": "BlogsController_getBlogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      }
+    },
+    "/api/v1/blogs/post/{slug}": {
+      "get": {
+        "operationId": "BlogsController_getBlogBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      }
+    },
+    "/api/v1/blogs/{id}": {
+      "get": {
+        "operationId": "BlogsController_getBlogById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      },
+      "put": {
+        "operationId": "BlogsController_updateBlog",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      },
+      "delete": {
+        "operationId": "BlogsController_deleteBlog",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      }
+    },
+    "/api/v1/blogs/post/{slug}/view": {
+      "patch": {
+        "operationId": "BlogsController_incrementView",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Blogs"
+        ]
+      }
+    },
+    "/api/v1/faqs": {
+      "post": {
+        "operationId": "FaqsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFaqDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Faqs"
+        ]
+      },
+      "get": {
+        "operationId": "FaqsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Faqs"
+        ]
+      }
+    },
+    "/api/v1/faqs/{id}": {
+      "get": {
+        "operationId": "FaqsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Faqs"
+        ]
+      },
+      "put": {
+        "operationId": "FaqsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Faqs"
+        ]
+      },
+      "delete": {
+        "operationId": "FaqsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Faqs"
+        ]
+      }
+    },
+    "/api/v1/pujas": {
+      "post": {
+        "operationId": "PujasController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePujaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pujas"
+        ]
+      },
+      "get": {
+        "operationId": "PujasController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pujas"
+        ]
+      }
+    },
+    "/api/v1/pujas/{idOrSlug}": {
+      "get": {
+        "operationId": "PujasController_findOne",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pujas"
+        ]
+      }
+    },
+    "/api/v1/pujas/{id}": {
+      "put": {
+        "operationId": "PujasController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pujas"
+        ]
+      },
+      "delete": {
+        "operationId": "PujasController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Pujas"
+        ]
+      }
+    },
+    "/api/v1/banners": {
+      "get": {
+        "operationId": "BannersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Banners"
+        ]
+      },
+      "post": {
+        "operationId": "BannersController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Banners"
+        ]
+      }
+    },
+    "/api/v1/banners/active": {
+      "get": {
+        "operationId": "BannersController_findActive",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Banners"
+        ]
+      }
+    },
+    "/api/v1/banners/{id}": {
+      "get": {
+        "operationId": "BannersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Banners"
+        ]
+      },
+      "put": {
+        "operationId": "BannersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Banners"
+        ]
+      },
+      "delete": {
+        "operationId": "BannersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Banners"
+        ]
+      }
+    },
+    "/api/v1/smart-kundali-settings/{reportSlug}": {
+      "get": {
+        "operationId": "SmartKundaliSettingsController_getSettings",
+        "parameters": [
+          {
+            "name": "reportSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "SmartKundaliSettings"
+        ]
+      },
+      "put": {
+        "operationId": "SmartKundaliSettingsController_updateSettings",
+        "parameters": [
+          {
+            "name": "reportSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "SmartKundaliSettings"
+        ]
+      }
+    },
+    "/api/v1/puja-bookings/create-order": {
+      "post": {
+        "operationId": "PujaBookingsController_createBooking",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePujaBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PujaBookings"
+        ]
+      }
+    },
+    "/api/v1/puja-bookings/verify-payment": {
+      "post": {
+        "operationId": "PujaBookingsController_verifyPayment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPujaPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PujaBookings"
+        ]
+      }
+    },
+    "/api/v1/puja-bookings": {
+      "get": {
+        "operationId": "PujaBookingsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PujaBookings"
+        ]
+      }
+    },
+    "/api/v1/report-bookings/create-order": {
+      "post": {
+        "operationId": "ReportBookingsController_createOrder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportBookings"
+        ]
+      }
+    },
+    "/api/v1/report-bookings/verify-payment": {
+      "post": {
+        "operationId": "ReportBookingsController_verifyPayment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyReportPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportBookings"
+        ]
+      }
+    },
+    "/api/v1/report-bookings": {
+      "get": {
+        "operationId": "ReportBookingsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportBookings"
+        ]
+      }
+    },
+    "/api/v1/hero-settings": {
+      "get": {
+        "operationId": "HeroSettingsController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "HeroSettings"
+        ]
+      },
+      "put": {
+        "operationId": "HeroSettingsController_updateSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "HeroSettings"
+        ]
+      }
     }
   },
   "info": {
@@ -13590,6 +14612,10 @@
         "properties": {}
       },
       "UpdateProfileDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateSavedProfileDto": {
         "type": "object",
         "properties": {}
       },
@@ -14038,6 +15064,30 @@
         "properties": {}
       },
       "UpdatePdfPricingDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateFaqDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePujaDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePujaBookingDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "VerifyPujaPaymentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateReportBookingDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "VerifyReportPaymentDto": {
         "type": "object",
         "properties": {}
       }

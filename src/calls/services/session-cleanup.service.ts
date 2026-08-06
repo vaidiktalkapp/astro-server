@@ -33,38 +33,56 @@ export class SessionCleanupService {
     const now = new Date();
 
     try {
-      // 1. ONLY Clean up active AI calls
-      const activeAiSessions = await this.callModel.find({ 
-        status: 'active',
-        isAi: true 
+      // 1. Clean up active calls (both AI and Human)
+      const activeSessions = await this.callModel.find({ 
+        status: 'active'
       });
 
-      for (const session of activeAiSessions) {
+      for (const session of activeSessions) {
         let shouldEnd = false;
-        let reason = 'ai_stale_timeout';
+        let reason = session.isAi ? 'ai_stale_timeout' : 'system_stale_timeout';
 
-        // AI Logic: End if user is offline for too long or if max duration reached
         const startTime = session.startTime || session.createdAt;
         const totalDuration = (now.getTime() - startTime.getTime()) / 1000;
         
         // Safety check 1: If call exceeded its allowed balance time (+ 60s grace)
         if (session.maxDurationSeconds > 0 && totalDuration > (session.maxDurationSeconds + 60)) {
             shouldEnd = true;
-            reason = 'ai_max_duration_reached_cleanup';
+            reason = 'max_duration_reached_cleanup';
         }
         
-        // Safety check 2: If user has been offline for more than 3 minutes
-        const lastSeenTime = session.userStatus?.lastSeen?.getTime() || (session.startTime || session.createdAt).getTime();
-        const isUserOffline = !session.userStatus?.isOnline && 
-                            (lastSeenTime < (now.getTime() - 3 * 60 * 1000));
-        
-        if (isUserOffline) {
-          shouldEnd = true;
-          reason = 'ai_user_offline_cleanup';
+        // Safety check 2: Check offline status
+        if (session.isAi) {
+          const lastSeenTime = session.userStatus?.lastSeen?.getTime() || (session.startTime || session.createdAt).getTime();
+          const isUserOffline = !session.userStatus?.isOnline && 
+                              (lastSeenTime < (now.getTime() - 90 * 1000)); // 1.5 minutes
+          
+          if (isUserOffline) {
+            shouldEnd = true;
+            reason = 'ai_user_offline_cleanup';
+          }
+        } else {
+          // Human calls: check if EITHER user or astrologer has been offline for > 1.5 minutes (90s)
+          const userLastSeen = session.userStatus?.lastSeen?.getTime() || startTime.getTime();
+          const astroLastSeen = session.astrologerStatus?.lastSeen?.getTime() || startTime.getTime();
+          
+          const isUserOffline = !session.userStatus?.isOnline && (now.getTime() - userLastSeen > 90 * 1000);
+          const isAstroOffline = !session.astrologerStatus?.isOnline && (now.getTime() - astroLastSeen > 90 * 1000);
+
+          if (isUserOffline && isAstroOffline) {
+            shouldEnd = true;
+            reason = 'both_offline_cleanup';
+          } else if (isUserOffline) {
+            shouldEnd = true;
+            reason = 'user_offline_cleanup';
+          } else if (isAstroOffline) {
+            shouldEnd = true;
+            reason = 'astrologer_offline_cleanup';
+          }
         }
 
         if (shouldEnd) {
-          this.logger.warn(`[AI Cleanup] Ending stale active AI Call: ${session.sessionId} | Reason: ${reason}`);
+          this.logger.warn(`[Cleanup] Ending stale active Call: ${session.sessionId} | Reason: ${reason}`);
           await this.callSessionService.endSession(session.sessionId, 'system', reason);
         }
       }
@@ -118,20 +136,21 @@ export class SessionCleanupService {
     const now = new Date();
 
     try {
-      // ONLY Clean up active AI chats
-      const activeAiChats = await this.chatModel.find({
-        status: 'active',
-        orderId: /^AI-/ // AI chats always start with AI-
+      // 1. Clean up ALL active chats
+      const activeChats = await this.chatModel.find({
+        status: 'active'
       });
 
-      for (const chat of activeAiChats) {
+      for (const chat of activeChats) {
         const lastActivity = chat.lastMessageAt || chat.updatedAt || chat.createdAt;
         const inactivityDuration = now.getTime() - new Date(lastActivity).getTime();
         
-        // If no message for 15 minutes, end the AI chat
-        if (inactivityDuration > 15 * 60 * 1000) {
-          this.logger.warn(`[AI Cleanup] Ending inactive AI Chat: ${chat.sessionId}`);
-          await this.chatSessionService.endSession(chat.sessionId, 'system', 'ai_inactivity_timeout');
+        const isAi = chat.orderId?.startsWith('AI-');
+
+        // If no message for 2 minutes, end the chat to save balance
+        if (inactivityDuration > 2 * 60 * 1000) {
+          this.logger.warn(`[Cleanup] Ending inactive Chat: ${chat.sessionId}`);
+          await this.chatSessionService.endSession(chat.sessionId, 'system', isAi ? 'ai_inactivity_timeout' : 'human_inactivity_timeout');
         }
       }
 

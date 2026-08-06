@@ -243,6 +243,21 @@ export class AstrologyController {
     }
   }
 
+  @Get('daily-horoscope')
+  @ApiOperation({ summary: 'Get daily horoscope for all 12 signs' })
+  @ApiResponse({ status: 200, description: 'Return Daily Horoscope Data' })
+  async getDailyHoroscopeAllSigns(
+    @Query('period') period: string = 'today',
+    @Query('language') language: string = 'English'
+  ) {
+    try {
+        const result = await this.aiEngine.getDailyHoroscopeAllSigns(period, language);
+        return { success: true, data: result };
+    } catch (error: any) {
+        return { success: false, message: error.message };
+    }
+  }
+
   // -------------------------------------------------------------------------
   // CHINESE ZODIAC USER ENDPOINTS
   // -------------------------------------------------------------------------

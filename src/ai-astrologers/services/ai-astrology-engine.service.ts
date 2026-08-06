@@ -6,6 +6,10 @@ import { HoroscopeService } from '../../horoscope/horoscope.service'; // ✅ Add
 import { LalKitabSettingsService } from '../../lal-kitab-settings/lal-kitab-settings.service';
 import { AstrologyContentService } from '../../astrology/services/astrology-content.service';
 import { Inject, forwardRef, OnModuleDestroy } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { AiResponseCache } from '../schemas/ai-response-cache.schema';
+import { ManualHoroscope } from '../schemas/manual-horoscope.schema';
 
 @Injectable()
 export class AiAstrologyEngineService implements OnModuleDestroy {
@@ -22,6 +26,9 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
     // Bug 6 Fix: In-memory astro data cache keyed by birth details. Eliminates repeated Python spawns.
     private readonly astroDataCache = new Map<string, { data: any; timestamp: number }>();
     private readonly ASTRO_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+    // Cache for Daily Horoscope all signs (In-memory fallback + Mongo)
+    private readonly dailyHoroscopePromiseCache = new Map<string, Promise<any>>();
 
     public getVoiceModelName(): string {
         return this.VOICE_MODEL_NAME;
@@ -55,11 +62,15 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
     - **HANDLE AMBIGUITY GRACEFULLY**: If the user's message is unclear due to typos, slang, incomplete sentences, or ambiguous context, do NOT make assumptions. Do NOT default to asking for birth details. Instead, politely ask the user to clarify their question before proceeding.
     🧠 ASTROLOGY LOGIC & PREDICTIONS (CRITICAL):
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    - **PREDICTING FOR OTHERS**: If the user asks about someone else (e.g., husband, wife, brother, child, friend etc.):
-      * First, politely ask for their details based on your expertise (Vedic needs exact Date, Time, Place; Numerology/Tarot need Name, Date). Ask ONLY ONCE.
-      * CRITICAL TOOL TRIGGER: If the user provides the Date, Time, and Place of Birth for the second person, you MUST call the \`calculate_astrology_matching\` tool to dynamically calculate their chart and matchmaking score. Do NOT hallucinate or guess compatibility if they provide full details.
+    - **BLENDED ADVICE**: Users appreciate warm, practical life advice (e.g., career tips, health habits, financial planning, or relationship guidance). You MUST provide this comforting, practical guidance, but you MUST ALWAYS seamlessly blend it with astrological reasoning. For instance, tie career advice to Saturn or the 10th House, health tips to Mars or the 6th House, and relationship guidance to Venus or the 7th House. Be a supportive human guide while keeping your roots firmly in astrology.
+    - **SUBJECT TRACKING & CONTEXT**: Users often switch topics and ask about different people in their lives. You MUST strictly track WHO the user is currently talking about. Do NOT mix up people from earlier in the chat history. If the user sends a short, vague fragment, look at the IMMEDIATELY preceding messages to know exactly who or what they are referring to, rather than confusing them with someone discussed earlier in the session.
+    - **NO HALLUCINATION**: NEVER invent, guess, or bring up specific names of people, places, organizations, or past events that the user has not explicitly mentioned in this session.
+    - **PREDICTING FOR OTHERS (STRICT MANDATE)**: If the user asks about ANY third party:
+      * DO NOT start guessing their feelings, predicting their actions, or giving advice about them based ONLY on the primary user's birth chart. 
+      * First, you MUST politely ask for that third party's birth details (Date, Time, Place for Vedic; Name, Date for Numerology/Tarot). Ask ONLY ONCE.
+      * CRITICAL TOOL TRIGGER: Once the user provides the required birth details for the second person, you MUST call the \`calculate_astrology_matching\` tool to dynamically calculate their chart.
+      * If the user refuses or doesn't have the details, ONLY THEN rely on the primary user's chart to give a limited prediction based on the relevant house or planetary ruler for that relationship.
       * Once the tool returns data, use it to provide a highly accurate, personalized reading in your specific expertise tone.
-
     ⚖️ PREDICTION QUALITY RULES (CRITICAL):
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     - **CERTAINTY CALIBRATION**: NEVER make absolute, 100% certain predictions about outcomes, timings, or another person's character or feelings. Always use calibrated, probabilistic language such as "yog dikh raha hai", "sambhavana hai", "chart support karta hai". NEVER say things are guaranteed or certain.
@@ -82,6 +93,10 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
             finance: `Focus on 2nd and 11th houses and Jupiter.`,
             education: `Focus on 5th house and Mercury.`,
             spiritual: `Focus on 9th / 12th houses and soul evolution.`,
+            travel: `Focus on 9th and 12th houses and Rahu for foreign travel or settlement.`,
+            legal: `Focus on 6th house, Mars, and Saturn for court cases or litigation.`,
+            property: `Focus on 4th house and Mars/Venus for property, home, or vehicles.`,
+            children: `Focus on 5th house and Jupiter for progeny, pregnancy, or children.`,
             casual: `Greet the user with "Namaste" or "Pranam". Mention that the planets and their alignment today feel auspicious for this meeting. Ask how you can guide them using the wisdom of the Vedas. Keep it warm and divine.`,
             general: `Holistic overview using Lagna and Dasha.`,
             generalQuestion: `Handle any general question using Dasha, transits, or Lagna if available.`
@@ -93,6 +108,10 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
             finance: `Focus on abundance cards from the Suit of Pentacles.`,
             education: `Focus on cards representing focus and knowledge.`,
             spiritual: `Focus on Major Arcana archetypes and soul path.`,
+            travel: `Focus on the Chariot, 6 of Swords, or 8 of Wands for movement and travel.`,
+            legal: `Focus on Justice and Emperor for legal or official matters.`,
+            property: `Focus on 4 of Wands or 10 of Pentacles for home and stability.`,
+            children: `Focus on the Empress, Page of Cups, or 6 of Cups for family and children.`,
             casual: `Greet with warmth and intuitive energy. Mention that the cards are buzzing with insights for them today. Ask what mysteries they wish to uncover with a Tarot spread.`,
             general: `General life - path card reading.`,
             generalQuestion: `Respond using Tarot symbolism and intuitive guidance.`
@@ -104,6 +123,10 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
             finance: `Focus on timing for financial expansion using Personal Years.`,
             education: `Focus on mental focus numbers.`,
             spiritual: `Analyze the soul number and destiny frequency.`,
+            travel: `Focus on Number 5 vibrations and cycles of change/travel.`,
+            legal: `Focus on Number 8 vibrations and cycles of karma/justice.`,
+            property: `Focus on Number 4 vibrations for foundation and real estate.`,
+            children: `Focus on Number 3 and 6 vibrations for family creation and joy.`,
             casual: `Greet by acknowledging the seeker's unique name vibration. Mention that the numbers are in beautiful harmony for this session. Ask how you can help them align with their destiny today through Numerology.`,
             general: `Overview of core numbers(Life Path, Destiny).`,
             generalQuestion: `Respond using vibrational frequencies and personal cycles.`
@@ -190,6 +213,8 @@ Respond with ONLY the JSON object. No preamble.`,
         private readonly lalKitabSettingsService: LalKitabSettingsService,
         @Inject(forwardRef(() => AstrologyContentService))
         private readonly astrologyContentService: AstrologyContentService,
+        @InjectModel(AiResponseCache.name) private readonly aiResponseCacheModel: Model<AiResponseCache>,
+        @InjectModel(ManualHoroscope.name) private readonly manualHoroscopeModel: Model<ManualHoroscope>
     ) {
         const apiKey = this.configService.get<string>('OPENAI_API_KEY');
         if (!apiKey) {
@@ -207,6 +232,278 @@ Respond with ONLY the JSON object. No preamble.`,
         if (this.cleanupInterval) {
             clearInterval(this.cleanupInterval);
         }
+    }
+
+    private async mergeManualOverrides(aiData: any[], period: string, language: string, cacheKeyDate: string): Promise<any[]> {
+        const overrides = await this.manualHoroscopeModel.find({
+            period: period.toLowerCase(),
+            language: language.toLowerCase(),
+            dateIdentifier: cacheKeyDate
+        }).exec();
+
+        if (!overrides || overrides.length === 0) {
+            return aiData;
+        }
+
+        const overrideMap = new Map();
+        for (const o of overrides) {
+            overrideMap.set(o.sign.toLowerCase(), o.readingData);
+        }
+
+        return aiData.map(aiSignData => {
+            if (overrideMap.has(aiSignData.id.toLowerCase())) {
+                const manualData = overrideMap.get(aiSignData.id.toLowerCase());
+                return { ...aiSignData, ...manualData, isManual: true };
+            }
+            return aiSignData;
+        });
+    }
+
+    /**
+     * Generate or return cached horoscopes for all 12 signs based on period.
+     */
+    public async getDailyHoroscopeAllSigns(period: string = 'today', language: string = 'English'): Promise<any> {
+        // Use India timezone
+        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const todayDate = now.toLocaleDateString('en-CA');
+        
+        let cacheKeyDate = todayDate;
+        let periodText = 'today';
+        let astrologicalContextInstruction = `Reference specific daily transits (e.g., "Moon transits your sign", "Sun enters...") or current daily planetary aspects.`;
+        let moodInstruction = `The mood for ${periodText} with an emoji (e.g., "🔥 Energetic", "😌 Calm"). Show the actual mood relevant to the sign.`;
+        let numberInstruction = `A single lucky integer between 1 and 9.`;
+        let colorInstruction = `A Tailwind CSS background color class representing their lucky color (e.g., "bg-red-500", "bg-purple-500").`;
+        
+        if (period.toLowerCase() === 'tomorrow') {
+            const tmrw = new Date(now);
+            tmrw.setDate(tmrw.getDate() + 1);
+            cacheKeyDate = tmrw.toLocaleDateString('en-CA');
+            periodText = 'tomorrow';
+        } else if (period.toLowerCase() === 'week' || period.toLowerCase() === 'weekly') {
+            const currentDay = new Date(now);
+            const day = currentDay.getDay();
+            const diff = currentDay.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
+            const startOfWeek = new Date(currentDay.setDate(diff));
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 6);
+            
+            // Create a week cache key like 2026-W31
+            const firstDayOfYear = new Date(startOfWeek.getFullYear(), 0, 1);
+            const pastDaysOfYear = (startOfWeek.getTime() - firstDayOfYear.getTime()) / 86400000;
+            const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+            
+            cacheKeyDate = `${startOfWeek.getFullYear()}-W${weekNumber}`;
+            periodText = `the week of ${startOfWeek.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${endOfWeek.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+            astrologicalContextInstruction = `Reference broader planetary movements, week-long transits, or overarching themes relevant to the entire week. DO NOT use single-day transit references like "today Mars is in...".`;
+            moodInstruction = `The overall Theme for the week with an emoji (e.g., "🚀 Growth", "🧘‍♂️ Reflection", "💼 Focus").`;
+            numberInstruction = `null (Omit for weekly horoscopes to maintain astrological credibility).`;
+            colorInstruction = `null (Omit for weekly horoscopes to maintain astrological credibility).`;
+        } else if (period.toLowerCase() === 'month' || period.toLowerCase() === 'monthly') {
+            cacheKeyDate = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            periodText = `the month of ${now.toLocaleDateString('en-US', {month:'long', year:'numeric'})}`;
+            astrologicalContextInstruction = `Reference major monthly transits (e.g., Sun/Venus changes), retrograde cycles, or slow-moving planetary shifts. DO NOT use single-day transit references.`;
+            moodInstruction = `The overall Theme for the month with an emoji (e.g., "⚖️ Karma", "🔮 Expansion").`;
+            numberInstruction = `null (Omit for monthly horoscopes to maintain astrological credibility).`;
+            colorInstruction = `null (Omit for monthly horoscopes to maintain astrological credibility).`;
+        } else if (period.toLowerCase() === 'year' || period.toLowerCase() === 'yearly') {
+            cacheKeyDate = `${now.getFullYear()}`;
+            periodText = `the year ${now.getFullYear()}`;
+            astrologicalContextInstruction = `Reference slow-moving planetary transits like Jupiter, Saturn, Rahu, and Ketu. DO NOT use single-day or fast transits. Highlight major shifts expected this year.`;
+            moodInstruction = `The overarching Theme for the year with an emoji (e.g., "🌟 Transformation", "🏆 Achievement").`;
+            numberInstruction = `null (Omit for yearly horoscopes to maintain astrological credibility).`;
+            colorInstruction = `null (Omit for yearly horoscopes to maintain astrological credibility).`;
+        }
+
+        let overviewSentences = "3-4 sentences";
+        let aspectSentences = "2-3 sentences";
+        let targetWords = "250-350 words";
+        
+        if (period.toLowerCase() === 'week' || period.toLowerCase() === 'weekly') {
+            overviewSentences = "3-5 sentences";
+            aspectSentences = "3-4 detailed, complex sentences";
+            targetWords = "500-700 words";
+        } else if (period.toLowerCase() === 'month' || period.toLowerCase() === 'monthly') {
+            overviewSentences = "3-5 sentences";
+            aspectSentences = "4-5 detailed, complex sentences";
+            targetWords = "600-700 words";
+        } else if (period.toLowerCase() === 'year' || period.toLowerCase() === 'yearly') {
+            overviewSentences = "4-6 sentences";
+            aspectSentences = "4-5 detailed, complex sentences";
+            targetWords = "700-800 words";
+        }
+
+        const cacheKey = `horoscope_${period.toLowerCase()}_${language.toLowerCase()}_${cacheKeyDate}_v25`;
+
+        // 1. Check final data cache in MongoDB
+        let finalData = null;
+        const cached = await this.aiResponseCacheModel.findOne({ cacheKey }).exec();
+        if (cached && cached.data) {
+            finalData = cached.data;
+        }
+
+        // 2. Check if generation is already in progress to avoid concurrent API calls
+        const inProgressKey = `${cacheKey}_${cacheKeyDate}`;
+        if (!finalData && this.dailyHoroscopePromiseCache.has(inProgressKey)) {
+            finalData = await this.dailyHoroscopePromiseCache.get(inProgressKey);
+        }
+
+        if (finalData) {
+            return this.mergeManualOverrides(finalData, period, language, cacheKeyDate);
+        }
+
+        this.logger.log(`Generating new horoscopes for ${periodText} (${language})...`);
+        
+        // --- INJECT REAL EPHEMERIS ---
+        let ephemerisData = '';
+        try {
+            let targetDateObj = now;
+            if (period.toLowerCase() === 'tomorrow') {
+                targetDateObj = new Date(now);
+                targetDateObj.setDate(targetDateObj.getDate() + 1);
+            }
+            const targetDateStr = targetDateObj.toISOString().split('T')[0];
+            const planets = await this.astronomyService.calculatePlanets(targetDateStr, "12:00", "28.7041", "77.1025", 5.5);
+            
+            // Format for prompt
+            const isLongPeriod = ['week', 'weekly', 'month', 'monthly', 'year', 'yearly'].includes(period.toLowerCase());
+            
+            const filteredPlanets = Object.values(planets).filter((p: any) => {
+                if (isLongPeriod && p.name === 'Ascendant') return false;
+                if (['Uranus', 'Neptune', 'Pluto'].includes(p.name)) return false; // Strictly Vedic Navagraha only
+                return true;
+            });
+            
+            const transitsList = filteredPlanets.map((p: any) => `${p.name} is in ${p.sign} (${p.is_retrograde === 'true' || p.is_retrograde === true ? 'Retrograde/Vakri' : 'Direct/Margi'})`);
+            
+            const ZODIACS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+            let precalculatedHouses = `\n\n[PRE-CALCULATED HOUSE POSITIONS FOR EACH SIGN:]\n`;
+            
+            ZODIACS.forEach((zodiac, zIndex) => {
+                precalculatedHouses += `For ${zodiac}:\n`;
+                filteredPlanets.forEach((p: any) => {
+                    const pIndex = ZODIACS.indexOf(p.sign);
+                    if (pIndex !== -1) {
+                        const house = ((pIndex - zIndex + 12) % 12) + 1;
+                        precalculatedHouses += `- ${p.name} is in the ${house} house (${p.is_retrograde === 'true' || p.is_retrograde === true ? 'Retrograde' : 'Direct'})\n`;
+                    }
+                });
+                precalculatedHouses += '\n';
+            });
+            
+            ephemerisData = `\n\n[GLOBAL PLANETARY SNAPSHOT (START OF PERIOD):]\n${transitsList.join(', ')}\n${precalculatedHouses}`;
+        } catch (e) {
+            this.logger.warn(`Failed to fetch real ephemeris data for prompt injection: ${e.message}`);
+        }
+
+        const prompt = `You are a premium Vedic Astrologer for 'VaidikTalk'. Generate a highly authentic, personalized-sounding Vedic horoscope for ${periodText} for all 12 zodiac signs.${ephemerisData}
+
+CRITICAL RULES FOR "reading":
+1. DEEP & PRACTICAL ADVICE (NO GENERIC FLUFF): Your advice must be as deep and actionable as a real, experienced Vedic Astrologer. Instead of "focus on your career", say "avoid starting new projects and focus on revising old tasks". Instead of "be careful with money", say "avoid lending money to others and stay away from risky stock investments". You MUST write ${aspectSentences} per heading. Do NOT write short paragraphs. Elaborate extensively.
+2. STRICTLY VEDIC ASTROLOGY: You MUST ONLY use the Navagraha (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu). NEVER mention Western planets like Uranus, Neptune, or Pluto.
+3. PRE-CALCULATED HOUSE CONSISTENCY: I have PRE-CALCULATED all house placements for you in the "[PRE-CALCULATED HOUSE POSITIONS FOR EACH SIGN:]" section. You MUST use these EXACT house numbers. Do NOT calculate houses yourself. For the Moon, describe its initial influence without implying it stays there for the whole period.
+4. DIVERSE PLANETARY USAGE & STRICT NON-REPETITION: You MUST use EVERY planet (including Rahu, Ketu, Venus) from the snapshot at least once. It is STRICTLY FORBIDDEN to mention any specific planet more than two times across the entire reading. Do NOT repeat "Sun and Jupiter" or "Saturn" in 4 different headings. Allocate different planets to relevant headings based on their Vedic karakatva (e.g., Mercury for Education, Venus for Love/Marriage, Mars for Real Estate/Health, Rahu/Ketu for unexpected events). Connect the advice to the Vedic meaning of the house.
+5. NO CALENDAR DATES: You are strictly forbidden from writing any specific calendar dates (like "July 30", "August 1"). Use natural relative time phrases like "mid-week", "as the weekend approaches", or "towards the end of the phase". Single dates will cause critical failure.
+6. REMEDIES VS MANTRA SEPARATION: The "Remedies Horoscope" section MUST NOT contain any mantras or chanting. It must be a purely physical or actionable ritual (e.g., donating food to the poor, keeping a gratitude journal, offering water to a plant, or keeping a specific object). The "Mantra Horoscope" section must be strictly dedicated to the chanting of a specific Vedic mantra.
+7. STRUCTURE & LENGTH: Provide the reading in the following strict format:
+   First, write a general overview and planetary influence description (${overviewSentences}).
+   Then, separate with exactly two newlines ("\\n\\n").
+   Then, provide detailed, ${aspectSentences} insights for EACH of these specific aspects, formatted strictly with markdown H3 headings like this:
+   
+   ### [Zodiac Sign] Education Horoscope
+   [Insight]
+
+   ### [Zodiac Sign] Finances Horoscope
+   [Insight]
+   
+   ### [Zodiac Sign] Career Horoscope
+   [Insight]
+   
+   ### [Zodiac Sign] Family Horoscope
+   [Insight]
+   
+   ### [Zodiac Sign] Health Horoscope
+   [Insight]
+   
+   ### [Zodiac Sign] Love Life Horoscope
+   [Insight]
+   
+   ### [Zodiac Sign] Married Life Horoscope
+   [Insight]
+   
+   ### [Zodiac Sign] Lucky Colours Horoscope
+   [Insight]
+
+   ### [Zodiac Sign] Remedies Horoscope
+   [Insight]
+
+   ### [Zodiac Sign] Mantra Horoscope
+   [Insight]
+   
+   CRITICAL: Replace "[Zodiac Sign]" with the actual name of the sign (e.g., Aries, Taurus). You MUST include every single one of those 10 H3 headings. Use double newlines ("\\n\\n") between each point. Make it feel premium and deeply astrological. Overall length should be around ${targetWords} per sign.
+
+Return the response strictly as a JSON object containing a "data" array. Each object in the "data" array MUST have the following keys:
+- "id": lowercase zodiac sign name (e.g., "aries", "taurus", etc.)
+- "reading": The astrologically-backed, detailed reading for ${periodText} formatted with \\n\\n between paragraphs (as per rule 6).
+- "mood": ${moodInstruction} DO NOT repeat the same emoji across more than 2-3 signs.
+- "luckyNumber": ${numberInstruction} DO NOT repeat the same number across more than 2-3 signs.
+- "color": ${colorInstruction}
+- "stats": an object containing exactly 4 properties strictly in LOWERCASE: "love", "career", "health", "money". Each property should be an object like { "label": "Good", "value": 75 }. The "label" should be one of "Poor", "Average", "Good", "Strong", "Excellent", and the "value" should be a corresponding percentage from 10 to 100.
+
+Language Rule: The "reading" and "mood" text MUST be written in ${language}. Use natural conversational language.
+(Keep "id", "color" and keys in English).
+Return ONLY the JSON object. No trailing commas, no markdown fences, ensure valid escaped JSON.`;
+
+        const generationPromise = (async () => {
+            try {
+                const response = await this.openai.chat.completions.create({
+                    model: this.getVoiceModelName(), // gpt-4o-mini is perfect for this
+                    messages: [{ role: 'user', content: prompt }],
+                    response_format: { type: 'json_object' },
+                    temperature: 0.3,
+                    max_tokens: 12000
+                });
+
+                const content = response.choices[0].message.content || '{"data":[]}';
+                let parsed = JSON.parse(content);
+                let parsedData = parsed.data || parsed.horoscopes || parsed;
+
+                if (!Array.isArray(parsedData) && parsedData.zodiacs) {
+                    parsedData = parsedData.zodiacs;
+                }
+
+                if (parsedData && Array.isArray(parsedData) && parsedData.length > 0) {
+                    // Set expiration time depending on period
+                    const expiresAt = new Date();
+                    if (period.toLowerCase() === 'week' || period.toLowerCase() === 'weekly') {
+                        expiresAt.setDate(expiresAt.getDate() + 7);
+                    } else if (period.toLowerCase() === 'month' || period.toLowerCase() === 'monthly') {
+                        expiresAt.setMonth(expiresAt.getMonth() + 1);
+                    } else if (period.toLowerCase() === 'year' || period.toLowerCase() === 'yearly') {
+                        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+                    } else {
+                        expiresAt.setDate(expiresAt.getDate() + 2); // default 2 days for daily/tomorrow
+                    }
+
+                    await this.aiResponseCacheModel.findOneAndUpdate(
+                        { cacheKey },
+                        { cacheKey, data: parsedData, expiresAt },
+                        { upsert: true, new: true }
+                    ).exec();
+
+                    // Cleanup promise cache shortly after success
+                    setTimeout(() => this.dailyHoroscopePromiseCache.delete(inProgressKey), 10000);
+                    return this.mergeManualOverrides(parsedData, period, language, cacheKeyDate);
+                }
+            } catch (e: any) {
+                this.logger.error('Failed to generate/parse daily horoscope JSON from AI: ' + e.message, e.stack);
+            }
+
+            this.dailyHoroscopePromiseCache.delete(inProgressKey);
+            return [];
+        })();
+
+        this.dailyHoroscopePromiseCache.set(inProgressKey, generationPromise);
+        return generationPromise;
     }
 
     private cleanupPersonalChineseCache() {
@@ -328,7 +625,7 @@ RULES:
 5. **DASHA TIMING**: Always reference Mahadasha/Antardasha from ASTRO_DATA. Explain its effect on the current life phase.
 6. **REMEDIES**: Suggest Vedic remedies (Mantras, Gemstones, Donations) tied to afflicted planets from the chart.
 7. **NO GENERIC ADVICE**: Every insight must be anchored to a specific planetary placement in the chart.
-8. **NO REPETITION OF PLACEMENTS**: Do not repeat the exact same planetary placement (e.g., "aapke 7th house mein Guru hai") in every single message. Once established, talk about its effects or move to another relevant planet/dasha.
+8. **STRICT ANTI-REPETITION (CRITICAL)**: NEVER repeat the same Dasha (e.g., 'Saturn Mahadasha and Ketu Antardasha') or the same planetary placement (e.g., 'Jupiter in 2nd house') in consecutive messages. If you just mentioned a Dasha or planet in the previous message, you MUST find a different astrological angle (like a Gochar/Transit, a different house lord, or a Yoga) for the next message. Sounding like a broken record is unacceptable.
 9. **TERMINOLOGY**: Always use Sanskrit + English (e.g., "Shani (Saturn)", "Karma Bhava (10th House)").
 10. **DATA MISSING**: If ASTRO_DATA is absent or marked Unknown, do NOT mention any technical issues, missing data, or system errors to the user. Instead, rely on your intuition and the basic birth date provided to give a graceful, spiritual response. Act completely confident.
 11. **STRICT PERSONA BOUNDARY**: If the user specifically asks you to "draw tarot cards" or "read my numbers", you MUST gently clarify that you are a Vedic Astrologer, and then immediately answer their question using their Kundali/Birth Chart instead.
@@ -364,15 +661,15 @@ IDENTITY: You are an expert Numerologist.
 RULES:
 1. **EMPATHY FIRST**: If the user is distressed, sad, or facing a serious life problem (like relationship issues, career loss, or health problems), provide a brief, professional word of comfort (max 1 short sentence) BEFORE mentioning any numbers. Do NOT be overly emotional or dramatic.
 2. **CORE NUMBERS**: Base your guidance on the user's Life Path Number, Destiny Number, or Birth Number, but weave them naturally into the conversation. Do NOT forcibly ask follow-up questions about these numbers at the end of every message.
-   - **Life Path (Bhagyank)**: Sum of all digits in DOB (DD+MM+YYYY). Master Numbers 11, 22, 33 are NOT reduced.
-   - **Birth Number (Radix/Moolank)**: Sum of digits of the Day of birth (DD).
-   - **Destiny Number (Namank)**: Sum of all letters in the Full Name (Chaldean system).
-3. **PERSONAL YEAR**: Calculate for the CURRENT YEAR (${currentYear}). Formula: Day + Month + ${currentYear}.
+   - **Life Path (Bhagyank)**: Rely on context. DO NOT recalculate.
+   - **Birth Number (Radix/Moolank)**: Rely on context. DO NOT recalculate.
+   - **Destiny Number (Namank)**: Provided in context.
+3. **PERSONAL YEAR**: Rely EXACTLY on the 'Current Personal Year' provided in the context. DO NOT recalculate it.
 4. **VIBRATION**: Explain the "vibrational frequency" of numbers but directly link it to whatever specific situation or question the user has asked about (e.g., career, marriage, travel, finance). Don't give generic readings.
 5. **NO TAROT/VEDIC**: Do NOT use Tarot or Vedic terminology (like Dasha, Kundali, Houses, or Planets).
 6. **PRACTICALITY**: Provide actionable advice based on the number's energy.
 7. **STRICT PERSONA BOUNDARY**: If the user specifically asks you to "check my kundali", "read my birth chart", or "draw tarot cards", you MUST gently clarify that you are a Numerologist, and then immediately answer their question using their core numbers instead.
-8. **NO REPETITION**: NEVER give the same explanation, advice, or conclusion across multiple messages. Each response must bring a new numerological angle — a different number, a different cycle, or a deeper layer of analysis.
+8. **NO REPETITION**: NEVER give the same explanation, advice, or conclusion across multiple messages. Each response must bring a new numerological angle — a different number, a different cycle, or a deeper layer of analysis. DO NOT start every message with the user's name. DO NOT use repetitive filler phrases like "Numerology ke anusar" or "Numerologically" in every response. Start directly with the new answer.
 9. **ACT ON YES/OK**: If the user says "Yes", "OK", "Go ahead", "Haan", or any affirmation, provide the actual content IMMEDIATELY. Do NOT ask the same follow-up question again. Move forward with the answer.
 10. **HANDLE AMBIGUITY**: If the user's message is unclear, very short, or has typos (e.g., "There", "Hm", "Ok so"), do NOT repeat the previous answer or ask for birth details again. Politely ask what specifically they would like to know.
 11. **CALIBRATED CERTAINTY**: Never make absolute statements about another person's feelings or future. Use language like "The numbers suggest...", "Numerologically, the vibration indicates...", "There is a strong possibility that...". NEVER say "He loves you" or "This will definitely happen".
@@ -453,12 +750,12 @@ Remedies → Behavioral, mindset, and energy-based guidance
     NEVER SAY "I cannot" FOR TOPIC MISMATCH:
     - If the user asks about a topic outside your expertise, DO NOT refuse. Pivot as instructed above.
     LANGUAGE INTELLIGENCE (${isVoice ? 'VOICE' : 'CHAT'}):
-    - **CRITICAL MATCHING**: You MUST match the user's language and script exactly.
-    - **ENGLISH**: ONLY reply in pure English if the user's message is 100% English with NO Hindi words.
+    - **MESSAGE-BASED DETECTION (CRITICAL)**: Always detect the language from the user's latest message. Ignore metadata if it says English but the user speaks differently.
+    - **ENGLISH**: ONLY reply in pure English if the user's message is 100% standard, grammatically correct English.
     - **HINDI / HINGLISH**:
-        - If the user uses Hindi words (even mixed with English like "mujhe confirm date bataye"), your response MUST be in Hindi/Hinglish.
-        - ${isVoice ? 'CRITICAL (VOICE): ALWAYS use native Devanagari script for Hindi. DO NOT use Roman script (Hinglish) as it ruins TTS pronunciation.' : 'CHAT SCRIPT: If the user writes in Devanagari (हिंदी), reply in Devanagari. If they use Roman script (Hinglish), you MUST reply in Hinglish. DO NOT switch to pure English just because they used English words like "date" or "please".'}
-    - **STRICT CONSISTENCY**: Never randomly switch languages between messages. Maintain the exact language and script.
+        - If the user uses ANY Roman-script words that are not standard English, or if the spelling looks like phonetic chat slang or abbreviations, it is HINGLISH. You MUST respond in Hinglish.
+        - ${isVoice ? 'CRITICAL (VOICE): ALWAYS use native Devanagari script for Hindi. DO NOT use Roman script (Hinglish) as it ruins TTS pronunciation.' : 'CHAT SCRIPT: If the user writes in Devanagari (हिंदी), reply in Devanagari. If they write in Roman script with Hindi words (Hinglish), you MUST reply in Hinglish.'}
+    - **STRICT CONSISTENCY & MEMORY**: Never randomly switch languages between messages. If the user's message is ambiguous, check their previous messages to determine their preferred language (Hindi/Hinglish vs English) and stick to it.
     
     4. **HINDI / HINGLISH TONE (CRITICAL - ALWAYS APPLY IF USER SPEAKS HINDI OR HINGLISH)**:
        - Use **NORMAL, CONVERSATIONAL HINDI** (Bolchal ki bhasha).
@@ -519,9 +816,10 @@ Remedies → Behavioral, mindset, and energy-based guidance
         if (msg.includes('marry') || msg.includes('marriage') || msg.includes('love') || msg.includes('relationship') || msg.includes('partner') || msg.includes('husband') || msg.includes('wife')
             || msg.includes('shaadi') || msg.includes('shadi') || msg.includes('vivah') || msg.includes('rishta') || msg.includes('pyaar') || msg.includes('prem') || msg.includes('ladka') || msg.includes('ladki')) return 'marriage';
 
-        // Health — English + Hinglish
+        // Health / Pregnancy — English + Hinglish
         if (msg.includes('health') || msg.includes('sick') || msg.includes('disease') || msg.includes('surgery') || msg.includes('mental') || msg.includes('injury')
-            || msg.includes('bimari') || msg.includes('beemari') || msg.includes('dard') || msg.includes('operation') || msg.includes('dawai') || msg.includes('hospital')) return 'health';
+            || msg.includes('bimari') || msg.includes('beemari') || msg.includes('dard') || msg.includes('operation') || msg.includes('dawai') || msg.includes('hospital')
+            || msg.includes('pregnant') || msg.includes('pargnet') || msg.includes('conceive') || msg.includes('consiv') || msg.includes('baby') || msg.includes('bacha') || msg.includes('child')) return 'health';
 
         // Finance — English + Hinglish
         if (msg.includes('money') || msg.includes('finance') || msg.includes('wealth') || msg.includes('rich') || msg.includes('investment') || msg.includes('loan')
@@ -530,6 +828,22 @@ Remedies → Behavioral, mindset, and energy-based guidance
         // Education — English + Hinglish
         if (msg.includes('math') || msg.includes('science') || msg.includes('study') || msg.includes('learn') || msg.includes('exam') || msg.includes('education') || msg.includes('college') || msg.includes('school') || msg.includes('intelligence') || msg.includes('mind') || msg.includes('brain')
             || msg.includes('padhai') || msg.includes('padhna') || msg.includes('result') || msg.includes('pass') || msg.includes('fail') || msg.includes('imtihan')) return 'education';
+
+        // Travel / Foreign Settlement — English + Hinglish
+        if (msg.includes('travel') || msg.includes('foreign') || msg.includes('abroad') || msg.includes('visa') || msg.includes('country') || msg.includes('pr') || msg.includes('settle')
+            || msg.includes('videsh') || msg.includes('bidesh') || msg.includes('yatra') || msg.includes('bahar') || msg.includes('ticket') || msg.includes('flight')) return 'travel';
+
+        // Legal / Court Cases — English + Hinglish
+        if (msg.includes('court') || msg.includes('case') || msg.includes('legal') || msg.includes('lawyer') || msg.includes('police') || msg.includes('jail') || msg.includes('prison')
+            || msg.includes('kacheri') || msg.includes('mukadma') || msg.includes('vakil') || msg.includes('faisla') || msg.includes('peshi') || msg.includes('vivad') || msg.includes('ladai')) return 'legal';
+
+        // Property / Vehicles — English + Hinglish
+        if (msg.includes('property') || msg.includes('house') || msg.includes('home') || msg.includes('land') || msg.includes('car') || msg.includes('vehicle') || msg.includes('buy')
+            || msg.includes('makaan') || msg.includes('makan') || msg.includes('ghar') || msg.includes('zameen') || msg.includes('jamin') || msg.includes('gaadi') || msg.includes('gadi') || msg.includes('plot')) return 'property';
+
+        // Children / Progeny — English + Hinglish (Health also covers pregnancy, but this focuses strictly on children/family planning)
+        if (msg.includes('child') || msg.includes('kid') || msg.includes('son') || msg.includes('daughter') || msg.includes('progeny') || msg.includes('family planning')
+            || msg.includes('bacha') || msg.includes('bachha') || msg.includes('ladka') || msg.includes('ladki') || msg.includes('santan') || msg.includes('santaan') || msg.includes('aulad')) return 'children';
 
         // Daily / Horoscope
         if (msg.includes('today') || msg.includes('daily') || msg.includes('horoscope') || msg.includes('aaj') || msg.includes('tomorrow')) return 'daily';
@@ -898,9 +1212,14 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
         }
 
         conversationHistory.slice(-8).forEach(msg => {
+            let cleanContent = msg.content || '';
+            // Remove the [USER CONTEXT] block sent by older mobile apps so it doesn't confuse the AI
+            cleanContent = cleanContent.replace(/\[USER CONTEXT\][\s\S]*?\[\/USER CONTEXT\]/gi, '').trim();
+            if (!cleanContent) cleanContent = 'Hello';
+            
             messages.push({
                 role: msg.senderModel === 'User' ? 'user' : 'assistant',
-                content: msg.content
+                content: cleanContent
             });
         });
 
@@ -997,6 +1316,8 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
     - **EMPATHETIC TONE**: If the user shares any personal struggle, acknowledge it briefly in just ONE short sentence. Be warm but professional, not overly dramatic.
     - **INTEGRATED NARRATIVE**: Provide a smooth, card-based reading in 2 short paragraphs.
     - **STRICT RULE**: NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text.
+    - **CONSISTENCY RULE (CRITICAL)**: Check the conversation history. If you previously drew a specific Tarot card for this exact topic/question, you MUST stick to that EXACT same card and deepen its meaning. Do NOT draw a new card for the same question.
+    - **VARIATION RULE**: Do NOT start your sentences the same way as previous messages (e.g., avoid repeating "Your cards suggest..."). Vary your phrasing completely so you don't sound like a script.
     - **CONTENT**: Focus 100% on Tarot card imagery, spreads, and arcana symbolism. Do NOT explicitly mention the user's "Sun Sign", "Moon Sign", "planets", or "Vedic horoscope". If a card has an astrological connection (like The Emperor being linked to Mars/Aries), you may mention the "bold, pioneering Aries-like energy of the card" to enrich the story, but DO NOT say "you have an Aries Sun Sign". Keep the entire reading strictly card-based.
     - **LENGTH**: 80-120 words.
     `;
@@ -1008,6 +1329,8 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
     - **EMPATHETIC TONE**: If the user shares any personal struggle, acknowledge it briefly in just ONE short sentence. Be warm but professional, not overly dramatic.
     - **SMOOTH CYCLES**: Provide a numerical analysis in 2 concise paragraphs.
     - **STRICT RULE**: NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text. NEVER end your message by asking questions like "Would you like to know about your X number?".
+    - **CONSISTENCY RULE (CRITICAL)**: Check the conversation history. If you previously calculated a specific Life Path or Destiny number, you MUST consistently use those exact same numbers. Do NOT change them.
+    - **VARIATION RULE**: Do NOT start your sentences the same way as previous messages. Vary your phrasing completely so you don't sound like a script.
     - **CONTENT**: Provide guidance based on Life Path, Destiny, and Personal Year numbers. Link these numbers directly to the user's current real-world situation, whatever it may be. Do NOT mention "Sun Signs", "Moon Signs", "planetary transits", "Kundali", or "Houses".
     - **LENGTH**: 80-120 words.
     `;
@@ -1020,6 +1343,8 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
     - **EMPATHETIC TONE**: If the user shares any personal struggle, acknowledge it briefly in just ONE short sentence. Be warm but professional, not overly dramatic.
     - **DIRECT ANSWER**: Answer the specific question in the first 1-2 sentences using chart data (Dasha, Lords).
     - **NO SYMBOLS**: Strictly NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text. NEVER ask robotic follow-up questions at the end.
+    - **CONSISTENCY RULE (CRITICAL)**: Check the conversation history. If you previously analyzed a specific House or Planet for this topic, build upon that analysis instead of randomly jumping to a different one for the same question.
+    - **VARIATION RULE**: Do NOT start your sentences the same way as previous messages. Vary your phrasing completely so you don't sound like a script.
     - **CONVERSATIONAL LOGIC**: Explain the astrological "why" in one integrated paragraph. Avoid repetitive "In your chart" or "As per Vedic astrology" phrases.
     - **TIMING**: Give specific years or phases but keep it conversational (e.g., "Between 2025 and 2027...").
     - **LENGTH**: 80-120 words.
@@ -1129,9 +1454,11 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                 }
             ];
 
+            const cleanUserMessage = userMessage.replace(/\[USER CONTEXT\][\s\S]*?\[\/USER CONTEXT\]/gi, '').trim() || 'Hello';
+
             const initialMessages: any[] = [
                 ...this.getOpenAIMessages(systemPrompt, astroContext, conversationHistory),
-                { role: 'user', content: userMessage }
+                { role: 'user', content: cleanUserMessage }
             ];
 
             // Bug 4 Fix: Use per-astrologer model params if provided, else fall back to defaults
@@ -1182,15 +1509,15 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                                 lon: coords.lon,
                                 tzone: secondTzone
                             };
-                            
+
                             // Calculate Match
                             const matchResult = await this.astronomyService.matchHoroscope(bInput, gInput);
-                            
+
                             // Calculate their chart
                             const secondChart = await this.astronomyService.calculateAllData(
                                 normalizedDate, normalizedTime, String(coords.lat), String(coords.lon), secondTzone
                             );
-                            
+
                             toolResponseStr = JSON.stringify({
                                 matchScore: matchResult?.total_points || 0,
                                 matchDetails: matchResult,
@@ -1213,14 +1540,14 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                         });
                     }
                 }
-                    this.logger.log(`🚀 [AI Engine] Re-prompting OpenAI with Tool Data...`);
-                    completion = await this.openai.chat.completions.create({
-                        model: this.MODEL_NAME,
-                        messages: initialMessages,
-                        max_tokens: modelParams?.maxOutputTokens ?? 800,
-                        temperature: modelParams?.temperature ?? 0.5,
-                        ...(modelParams?.topP !== undefined && { top_p: modelParams.topP }),
-                    });
+                this.logger.log(`🚀 [AI Engine] Re-prompting OpenAI with Tool Data...`);
+                completion = await this.openai.chat.completions.create({
+                    model: this.MODEL_NAME,
+                    messages: initialMessages,
+                    max_tokens: modelParams?.maxOutputTokens ?? 800,
+                    temperature: modelParams?.temperature ?? 0.5,
+                    ...(modelParams?.topP !== undefined && { top_p: modelParams.topP }),
+                });
             }
             const openaiEndTime = Date.now();
             this.logger.log(`✅ [AI Engine] OpenAI responded in ${openaiEndTime - openaiStartTime}ms`);
@@ -1355,7 +1682,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
         const astroName = astrologerProfile?.name || 'Divine Guide';
         const isFemale = astrologerProfile?.gender === 'female';
         const firstName = userName ? userName.split(' ')[0] : 'Seeker';
-        
+
         // Return instant local string to save 1-2 seconds of OpenAI latency during call connection
         if (language?.toLowerCase().includes('hi')) {
             const suffix = isFemale ? 'सकती' : 'सकता';
@@ -1915,7 +2242,7 @@ IMPORTANT:
             });
 
             const result = JSON.parse(completion.choices[0].message.content || '{}');
-            
+
             // Safety Net: Max 1000 entries to prevent memory leak during traffic spikes
             if (this.personalChineseCache.size >= 1000) {
                 const oldestKey = this.personalChineseCache.keys().next().value;
@@ -1924,7 +2251,7 @@ IMPORTANT:
 
             // Save to cache
             this.personalChineseCache.set(cacheKey, { timestamp: Date.now(), data: result });
-            
+
             return result;
         } catch (error) {
             this.logger.error('Error in getPersonalChineseReading:', error);

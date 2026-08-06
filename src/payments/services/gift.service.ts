@@ -457,4 +457,55 @@ export class GiftService {
       },
     };
   }
+
+  /**
+   * ✅ Get gift stats using aggregation (Fix for memory leak)
+   */
+  async getUserGiftStats(userId: string) {
+    const objectId = new Types.ObjectId(userId);
+    const query = { userId: objectId, userModel: 'User', type: 'gift' };
+    
+    const [stats, recentGifts] = await Promise.all([
+      this.transactionModel.aggregate([
+        { $match: query },
+        { 
+          $group: { 
+            _id: null, 
+            totalAmount: { $sum: { $abs: '$amount' } },
+            totalGifts: { $sum: 1 },
+            directGifts: { 
+              $sum: { $cond: [{ $eq: ['$metadata.context', 'direct'] }, 1, 0] } 
+            },
+            streamGifts: { 
+              $sum: { $cond: [{ $eq: ['$metadata.context', 'stream'] }, 1, 0] } 
+            }
+          } 
+        }
+      ]),
+      this.transactionModel.find(query).sort({ createdAt: -1 }).limit(5).lean()
+    ]);
+
+    const stat = stats[0] || { totalAmount: 0, totalGifts: 0, directGifts: 0, streamGifts: 0 };
+    
+    return {
+      success: true,
+      data: {
+        totalGifts: stat.totalGifts,
+        totalAmount: stat.totalAmount,
+        directGifts: stat.directGifts,
+        streamGifts: stat.streamGifts,
+        recentGifts: recentGifts.map((gift: any) => ({
+          transactionId: gift.transactionId,
+          amount: gift.amount,
+          description: gift.description,
+          astrologerId: gift.metadata?.astrologerId,
+          astrologerName: gift.metadata?.astrologerName,
+          giftType: gift.metadata?.giftType,
+          context: gift.metadata?.context,
+          streamId: gift.metadata?.streamId,
+          createdAt: gift.createdAt,
+        }))
+      }
+    };
+  }
 }

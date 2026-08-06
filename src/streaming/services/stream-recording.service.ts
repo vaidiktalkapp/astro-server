@@ -97,7 +97,7 @@ export class StreamRecordingService {
             recordingConfig: {
               channelType: 1, // Live broadcast
               streamTypes: 2, // Audio + Video
-              maxIdleTime: 30,
+              maxIdleTime: 300, // Increased to 5 minutes to prevent premature recording cut-offs
               transcodingConfig: {
                 width: 1280, // HD Quality
                 height: 720,

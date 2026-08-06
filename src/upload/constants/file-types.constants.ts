@@ -30,6 +30,12 @@ export const FILE_UPLOAD_CONFIG = {
     allowedExtensions: ['.mp3', '.mpeg', '.wav', '.m4a', '.aac', '.ogg'],
     folder: 'audio',
   },
+  document: {
+    maxSize: 25 * 1024 * 1024, // 25MB
+    allowedMimeTypes: ['application/pdf'],
+    allowedExtensions: ['.pdf'],
+    folder: 'documents',
+  },
 };
 
-export type FileType = 'image' | 'video' | 'audio';
+export type FileType = 'image' | 'video' | 'audio' | 'document';

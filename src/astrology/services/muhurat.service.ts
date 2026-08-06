@@ -9,6 +9,7 @@ import { AiAstrologyEngineService } from '../../ai-astrologers/services/ai-astro
 @Injectable()
 export class MuhuratService {
   private readonly logger = new Logger(MuhuratService.name);
+  private readonly cache = new Map<string, any>();
 
   constructor(
     @InjectModel(MuhuratCategory.name) private categoryModel: Model<MuhuratCategoryDocument>,
@@ -31,6 +32,12 @@ export class MuhuratService {
     tzone: number = 5.5,
     language: string = 'English'
   ): Promise<any> {
+    const cacheKey = `${category}_${startDate}_${endDate}_${lat}_${lon}_${tzone}_${language}`;
+    if (this.cache.has(cacheKey)) {
+        this.logger.log(`⚡ Returning cached Muhurat for ${category} (${startDate} to ${endDate})`);
+        return this.cache.get(cacheKey);
+    }
+
     try {
         this.logger.log(`🔍 Calculating merged Muhurat for ${category} (${startDate} to ${endDate})`);
 
@@ -121,11 +128,16 @@ export class MuhuratService {
             }
         }));
 
-        return {
+        const finalResult = {
             ...dynamicResult,
             auspicious_dates: finalAuspicious,
             all_dates: finalAll
         };
+
+        // Cache the result to make it instant for future loads
+        this.cache.set(cacheKey, finalResult);
+
+        return finalResult;
 
     } catch (error: any) {
         this.logger.error('Error in calculateMuhuratMerged:', error.message);

@@ -8,12 +8,15 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UploadService } from '../services/upload.service';
 import { FileValidationPipe } from '../pipes/file-validation.pipe';
 
 @Controller('upload')
+@UseGuards(JwtAuthGuard)
 export class UploadController {
   constructor(private uploadService: UploadService) {}
 
@@ -88,6 +91,33 @@ export class UploadController {
     return {
       success: true,
       message: 'Audio uploaded successfully',
+      data: {
+        url: result.url,
+        s3Key: result.key,
+        filename: result.filename,
+        size: result.size,
+        mimeType: result.mimeType,
+      },
+    };
+  }
+
+  /**
+   * Upload Document
+   * POST /upload/document
+   * Max size: 25MB
+   * Allowed: pdf
+   */
+  @Post('document')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadDocument(
+    @UploadedFile(new FileValidationPipe('document'))
+    file: Express.Multer.File,
+  ) {
+    const result = await this.uploadService.uploadDocument(file);
+
+    return {
+      success: true,
+      message: 'Document uploaded successfully',
       data: {
         url: result.url,
         s3Key: result.key,

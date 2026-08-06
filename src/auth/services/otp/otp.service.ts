@@ -237,7 +237,7 @@ export class OtpService {
         headers: {
           ...formData.getHeaders(),
         },
-        timeout: 30000, 
+        timeout: 30000,
       });
 
       if (response.status === 200 || response.status === 201) {
@@ -288,8 +288,8 @@ export class OtpService {
           template: {
             name: templateName,
             languageCode: 'en',
-            ...(bodyValues && bodyValues.length > 0 && { 
-              bodyValues: bodyValues.map(v => v.replace(/[\n\r\t]/g, ' ').replace(/\s{2,}/g, ' ').trim()) 
+            ...(bodyValues && bodyValues.length > 0 && {
+              bodyValues: bodyValues.map(v => v.replace(/[\n\r\t]/g, ' ').replace(/\s{2,}/g, ' ').trim())
             })
           }
         },

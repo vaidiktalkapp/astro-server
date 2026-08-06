@@ -655,9 +655,9 @@ export class CallSessionService {
         const vapiApiKey = this.configService.get<string>('VAPI_API_KEY');
         if (vapiApiKey) {
           // Fire-and-forget to not block the billing update
-          axios.patch(
-            `https://api.vapi.ai/call/${session.vapiCallId}`,
-            { status: 'ended' },
+          axios.post(
+            `https://api.vapi.ai/call/${session.vapiCallId}/control`,
+            { type: 'end-call' },
             { headers: { 'Authorization': `Bearer ${vapiApiKey}`, 'Content-Type': 'application/json' } }
           ).then(() => {
             this.logger.log(`✅ [CallSessionService] Successfully forcefully killed Vapi call ${session.vapiCallId}`);

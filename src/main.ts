@@ -81,16 +81,16 @@ async function bootstrap() {
     if (req.originalUrl.startsWith('/api')) {
       // Allow actual API calls to pass through without this auth
       if (req.originalUrl.startsWith('/api/v1')) {
-         return next();
+        return next();
       }
 
       const authHeader = req.headers.authorization;
-      
+
       // Basic Auth: admin / Vaidik@123
       if (authHeader && authHeader === 'Basic YWRtaW46VmFpZGlrQDEyMw==') {
         return next();
       }
-      
+
       res.setHeader('WWW-Authenticate', 'Basic realm="Vaidik API Documentation"');
       return res.status(401).send('Unauthorized Access to API Documentation');
     }

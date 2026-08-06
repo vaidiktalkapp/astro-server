@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AiAstrologersController } from './controllers/ai-astrologers.controller';
 import { AiOrdersController } from './controllers/ai-orders.controller';
 import { AiHistoryController } from './controllers/ai-history.controller';
+import { ManualHoroscopeController } from './controllers/manual-horoscope.controller';
 import { AiChatSessionService } from './services/chat-session.service';
 import { AiAstrologyEngineService } from './services/ai-astrology-engine.service';
 import { AiAnalyticsService } from './services/ai-analytics.service';
@@ -11,6 +12,8 @@ import { AstronomyService } from './services/astronomy.service';
 import { ChatSession, ChatSessionSchema } from '../chat/schemas/chat-session.schema';
 import { ChatMessage, ChatMessageSchema } from '../chat/schemas/chat-message.schema';
 import { AiAstrologerProfile, AiAstrologerProfileSchema } from './schemas/ai-astrologers-profile.schema';
+import { AiResponseCache, AiResponseCacheSchema } from './schemas/ai-response-cache.schema';
+import { ManualHoroscope, ManualHoroscopeSchema } from './schemas/manual-horoscope.schema';
 import { WalletTransaction, WalletTransactionSchema } from '../payments/schemas/wallet-transaction.schema';
 import { CallSession, CallSessionSchema } from '../calls/schemas/call-session.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
@@ -30,6 +33,8 @@ import { AstrologyModule } from '../astrology/astrology.module';
             { name: ChatSession.name, schema: ChatSessionSchema },
             { name: ChatMessage.name, schema: ChatMessageSchema },
             { name: AiAstrologerProfile.name, schema: AiAstrologerProfileSchema },
+            { name: AiResponseCache.name, schema: AiResponseCacheSchema },
+            { name: ManualHoroscope.name, schema: ManualHoroscopeSchema },
             { name: WalletTransaction.name, schema: WalletTransactionSchema },
             { name: User.name, schema: UserSchema },
             { name: Order.name, schema: OrderSchema },
@@ -46,7 +51,8 @@ import { AstrologyModule } from '../astrology/astrology.module';
     controllers: [
         AiAstrologersController, 
         AiOrdersController, 
-        AiHistoryController
+        AiHistoryController,
+        ManualHoroscopeController
     ],
     providers: [
         AiChatSessionService,

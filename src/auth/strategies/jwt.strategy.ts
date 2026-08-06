@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Astrologer, AstrologerDocument } from '../../astrologers/schemas/astrologer.schema';
+import { SimpleCacheService } from '../services/cache/cache.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -15,6 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Astrologer.name) private astrologerModel: Model<AstrologerDocument>,
+    private cacheService: SimpleCacheService,
     configService: ConfigService,
   ) {
     const jwtSecret = configService.get<string>('JWT_SECRET');
@@ -194,9 +196,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         throw new UnauthorizedException('User not found or inactive');
       }
 
-      // ✅ Update last active timestamp
-      user.lastActiveAt = new Date();
-      await user.save();
+      // ✅ Update last active timestamp with 5-minute throttling via cache
+      const cacheKey = `last_active_${user._id.toString()}`;
+      const lastUpdated = await this.cacheService.get(cacheKey);
+
+      if (!lastUpdated) {
+        user.lastActiveAt = new Date();
+        await user.save();
+        // Set cache for 5 minutes (300 seconds)
+        await this.cacheService.set(cacheKey, 'true', 300);
+      }
 
       // this.logger.log('✅ User validated successfully', {
       //   userId: (user._id as any).toString(),

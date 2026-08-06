@@ -414,9 +414,9 @@ ${previousTranscriptContext}
 
       this.logger.warn(`🛑 [AiVoiceService] Force stopping Vapi Call ID: ${vapiCallId} at infrastructure level.`);
       
-      const response = await axios.patch(
-        `${this.vapiBaseUrl}/call/${vapiCallId}`,
-        { status: 'ended' },
+      const response = await axios.post(
+        `${this.vapiBaseUrl}/call/${vapiCallId}/control`,
+        { type: 'end-call' },
         {
           headers: {
             'Authorization': `Bearer ${vapiApiKey}`,

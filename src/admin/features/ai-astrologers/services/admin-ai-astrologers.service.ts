@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import axios from 'axios';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AiAstrologerProfile, AiAstrologerProfileDocument } from '../../../../ai-astrologers/schemas/ai-astrologers-profile.schema';
@@ -644,8 +645,32 @@ export class AdminAiAstrologersService {
         const userData = session.userId as any;
         const astrologerData = session.astrologerId as any;
 
+        let freshRecordingUrl = session.recordingUrl;
+        
+        // Vapi S3 (Cloudflare R2) presigned URLs expire. If it's a Vapi call, fetch a fresh URL dynamically.
+        if (session.voiceProvider === 'vapi' && session.vapiCallId && process.env.VAPI_API_KEY) {
+            try {
+                // Fetch the authenticated presigned URL by hitting the mono-recording endpoint which returns a 302 redirect
+                const vapiRes = await axios.get(`https://api.vapi.ai/call/${session.vapiCallId}/mono-recording`, {
+                    headers: { Authorization: `Bearer ${process.env.VAPI_API_KEY}` },
+                    maxRedirects: 0,
+                    validateStatus: (status) => status >= 200 && status < 400
+                });
+                
+                if (vapiRes.headers.location) {
+                    freshRecordingUrl = vapiRes.headers.location;
+                    
+                    // Fire and forget: Update the fresh URL in DB so it works for the next 30 minutes
+                    this.callSessionModel.updateOne({ _id: session._id }, { $set: { recordingUrl: freshRecordingUrl } }).exec().catch(() => {});
+                }
+            } catch (e) {
+                this.logger.error(`Failed to fetch fresh recording URL from Vapi for call ${session.vapiCallId}: ${e.message}`);
+            }
+        }
+
         return {
             ...session,
+            recordingUrl: freshRecordingUrl,
             userName: userData?.name || 'Unknown User',
             userEmail: userData?.email || '',
             aiAstrologerName: astrologerData?.name || 'AI Astrologer',

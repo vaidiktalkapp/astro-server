@@ -131,7 +131,7 @@ export class StreamAgoraService {
           clientRequest: {
             token: token,
             recordingConfig: {
-              maxIdleTime: 30,
+              maxIdleTime: 300, // Increased to 5 minutes to prevent premature recording cut-offs
               streamTypes: 2, // Audio + Video
               channelType: 1, // Live broadcasting
               transcodingConfig: {

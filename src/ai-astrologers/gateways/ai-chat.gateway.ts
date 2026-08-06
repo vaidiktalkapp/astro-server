@@ -188,10 +188,17 @@ export class AiChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 throw new BadRequestException('Session has ended');
             }
 
+            // Remove [USER CONTEXT] block sent by frontend before saving to DB
+            let cleanMessageToSave = message.replace(/\[USER CONTEXT\][\s\S]*?\[\/USER CONTEXT\]/gi, '').trim();
+            if (!cleanMessageToSave) {
+                // If the message was ONLY context, just save a placeholder to avoid empty messages in DB
+                cleanMessageToSave = "Started consultation with birth details.";
+            }
+
             // Save user message
             const { session: currentSession } = await this.aiChatSessionService.saveMessage(
                 sessionId,
-                message,
+                cleanMessageToSave,
                 'user',
                 userId
             );
@@ -325,7 +332,7 @@ export class AiChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 accuracy = this.aiEngineService.calculateQualityScore(aiResponse) * 10;
             }
 
-            const cleanResponseRaw = aiResponse?.replace(/\[\[METRICS:.*?\]\]/gi, '')?.trim();
+            const cleanResponseRaw = aiResponse?.replace(/\[\[METRICS:.*?\]\]/gi, '')?.replace(/\[USER CONTEXT\][\s\S]*?\[\/USER CONTEXT\]/gi, '')?.trim();
 
             // Split response into highly granular "cards" (bubbles) as requested.
             // Split by:

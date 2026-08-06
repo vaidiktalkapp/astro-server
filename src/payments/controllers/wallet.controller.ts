@@ -239,25 +239,6 @@ export class WalletController {
    */
   @Get('gifts/stats')
   async getGiftStats(@Req() req: AuthenticatedRequest) {
-    const result = await this.giftService.getUserGiftHistory(req.user._id, {
-      page: 1,
-      limit: 1000, // Get all for stats
-    });
-
-    const totalGifts = result.data.gifts.length;
-    const totalAmount = result.data.gifts.reduce((sum, gift) => sum + Math.abs(gift.amount), 0);
-    const directGifts = result.data.gifts.filter((g) => g.context === 'direct').length;
-    const streamGifts = result.data.gifts.filter((g) => g.context === 'stream').length;
-
-    return {
-      success: true,
-      data: {
-        totalGifts,
-        totalAmount,
-        directGifts,
-        streamGifts,
-        recentGifts: result.data.gifts.slice(0, 5),
-      },
-    };
+    return this.giftService.getUserGiftStats(req.user._id);
   }
 }

@@ -95,7 +95,7 @@ export class CallRecordingService {
         clientRequest: {
           token: recordingToken,
           recordingConfig: {
-            maxIdleTime: 30,
+            maxIdleTime: 300, // Increased to 5 minutes to prevent premature recording cut-offs
             streamTypes: callType === 'video' ? 2 : 0,
             channelType: 0, 
             videoStreamType: 0,
@@ -196,7 +196,18 @@ export class CallRecordingService {
       const status = error.response?.status;
       if (status === 400 || status === 404) {
          this.logger.warn(`Recording stop 404/400 (likely already stopped): ${sessionId}`);
-         return { success: true, recordingUrl: null, message: 'Recording already stopped' };
+         // ✅ FIX: Recover URL even if already stopped by Agora (due to maxIdleTime)
+         const sanitizedSessionId = sessionId.replace(/[^a-zA-Z0-9]/g, '');
+         const s3Key = `recordings/${sanitizedSessionId}/${sid}_${channelName}.m3u8`;
+         const recordingUrl = `https://${this.S3_BUCKET}.s3.amazonaws.com/${s3Key}`;
+         
+         return { 
+           success: true, 
+           recordingUrl, 
+           recordingS3Key: s3Key, 
+           recordingDuration: 0,
+           message: 'Recording already stopped (recovered URL)' 
+         };
       }
 
       this.logger.error(`Recording stop failed: ${error.response?.data?.message || error.message}`);

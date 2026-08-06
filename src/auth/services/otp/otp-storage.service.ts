@@ -21,7 +21,7 @@ export class OtpStorageService {
   storeOTP(phoneNumber: string, countryCode: string, otp: string, ttlMinutes: number = 10): void {
     const key = this.createKey(phoneNumber, countryCode);
     const expiresAt = Date.now() + (ttlMinutes * 60 * 1000);
-    
+
     this.otpStore.set(key, {
       otp,
       phoneNumber,
@@ -31,7 +31,7 @@ export class OtpStorageService {
     });
 
     console.log(`✅ OTP stored for key: ${key}, OTP: ${otp}, Expires: ${new Date(expiresAt)}`);
-    
+
     // Auto cleanup after expiry
     setTimeout(() => {
       this.otpStore.delete(key);
@@ -89,7 +89,7 @@ export class OtpStorageService {
     // Success - remove OTP
     this.otpStore.delete(key);
     console.log(`✅ OTP validated successfully for key: ${key}`);
-    
+
     return {
       valid: true,
       message: 'OTP verified successfully'
@@ -104,7 +104,7 @@ export class OtpStorageService {
     const key = this.createKey(phoneNumber, countryCode);
     const now = Date.now();
     const oneHour = 60 * 60 * 1000;
-    
+
     const rateLimit = this.rateLimitStore.get(key);
 
     if (!rateLimit) {
@@ -129,7 +129,7 @@ export class OtpStorageService {
     // Increment attempts
     rateLimit.attempts++;
     rateLimit.lastAttempt = now;
-    
+
     return { allowed: true, message: 'OK' };
   }
 

@@ -223,6 +223,12 @@ export class AiChatSessionService implements OnModuleInit {
         }
 
         const isSenderUser = senderType === 'user';
+        
+        // Prevent users from sending messages if the session has already ended (e.g. low balance timeout)
+        if (isSenderUser && session.status !== 'active') {
+            throw new BadRequestException('Session is no longer active. Cannot send messages.');
+        }
+
         // Note: ChatMessage schema only accepts 'User' or 'Astrologer' enum values
         // We normalize the model name for message storage, while session uses dynamic refPath
         const messageId = uuidv4();
@@ -314,9 +320,16 @@ export class AiChatSessionService implements OnModuleInit {
             // Calculate duration based on ACTUAL activity, not wall clock time
             // Use lastMessageAt to determine when user actually stopped chatting
             const startTime = session.startTime || session.createdAt;
-            const endTimeForBilling = session.lastMessageAt || new Date();
-            const durationSeconds = Math.floor((endTimeForBilling.getTime() - startTime.getTime()) / 1000);
-            const finalDuration = Math.max(durationSeconds, 1);
+            
+            let finalDuration = 0;
+            // Only bill if there was at least one message exchanged
+            if (session.lastMessageAt) {
+                const endTimeForBilling = session.lastMessageAt;
+                const durationSeconds = Math.floor((endTimeForBilling.getTime() - startTime.getTime()) / 1000);
+                finalDuration = Math.max(durationSeconds, 1);
+            } else {
+                this.logger.log(`[SETTLEMENT] Session ${sessionId} had no messages. Waiving charges.`);
+            }
 
             // Fetch astrologer data for rate
             const astrologer = await this.aiAstrologerModel.findById(session.astrologerId);

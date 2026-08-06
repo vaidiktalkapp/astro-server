@@ -294,4 +294,11 @@ export class UploadService {
   async uploadAudio(file: Express.Multer.File) {
     return this.uploadFile(file, 'audio');
   }
+
+  /**
+   * Upload document (convenience method)
+   */
+  async uploadDocument(file: Express.Multer.File) {
+    return this.uploadFile(file, 'document');
+  }
 }

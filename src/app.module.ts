@@ -48,7 +48,16 @@ import { HealingModule } from './healing/healing.module';
 import { FreeToolSettingsModule } from './free-tool-settings/free-tool-settings.module';
 import { CelebrityModule } from './celebrity/celebrity.module';
 import { MatrimonyModule } from './matrimony/matrimony.module';
+import { BlogsModule } from './blogs/blogs.module';
 import { PdfPricingModule } from './pdf-pricing/pdf-pricing.module';
+import { TestimonialsModule } from './testimonials/testimonials.module';
+import { FaqsModule } from './faqs/faqs.module';
+import { PujasModule } from './pujas/pujas.module';
+import { BannersModule } from './banners/banners.module';
+import { SmartKundaliSettingsModule } from './smart-kundali-settings/smart-kundali-settings.module';
+import { PujaBookingsModule } from './puja-bookings/puja-bookings.module';
+import { ReportBookingsModule } from './report-bookings/report-bookings.module';
+import { HeroSettingsModule } from './hero-settings/hero-settings.module';
 
 @Module({
   imports: [
@@ -147,6 +156,15 @@ import { PdfPricingModule } from './pdf-pricing/pdf-pricing.module';
     CelebrityModule,
     MatrimonyModule,
     PdfPricingModule,
+    TestimonialsModule,
+    BlogsModule,
+    FaqsModule,
+    PujasModule,
+    BannersModule,
+    SmartKundaliSettingsModule,
+    PujaBookingsModule,
+    ReportBookingsModule,
+    HeroSettingsModule,
   ],
   controllers: [AppController],
   providers: [
