@@ -89,6 +89,10 @@ export class Astrologer {
   })
   tier: string;
 
+  // ✅ NEW: Display order for manual position management
+  @Prop({ type: Number, index: true, default: 999999 })
+  displayOrder: number;
+
   @Prop()
   tierAssignedAt?: Date;
 

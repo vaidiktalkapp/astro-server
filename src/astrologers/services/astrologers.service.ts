@@ -270,37 +270,77 @@ export class AstrologersService {
           'stats.totalOrders': -1
         };
     }
+    sortCriteria = { displayOrder: 1, ...sortCriteria };
     sortCriteria._id = 1;
 
     const skip = (page - 1) * limit;
 
-    // Fetch
-    const [astrologers, total] = await Promise.all([
-      this.astrologerModel
-        .find(finalQuery)
-        // ✅ Include 'availability' to compute real-time status
-        .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats gender country tier')
-        .sort(sortCriteria)
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .exec(),
-      this.astrologerModel.countDocuments(finalQuery).exec()
-    ]);
+    // Fetch ALL matching astrologers to perform exact position placement in memory
+    const astrologers = await this.astrologerModel
+      .find(finalQuery)
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats gender country tier displayOrder')
+      .lean()
+      .exec();
 
+    const total = astrologers.length;
     const totalPages = Math.ceil(total / limit);
 
-    const serializedAstrologers = this.serializeAstrologers(astrologers, 'user');
+    let serializedAstrologers = this.serializeAstrologers(astrologers, 'user');
 
-    // ✅ Ensure online/live/busy astrologers always appear above offline astrologers
-    if (sortBy === 'popularity') {
-      serializedAstrologers.sort((a, b) => {
-        const order: Record<string, number> = { live: 1, online: 2, busy: 3, offline: 4 };
-        const rankA = order[a.realStatus] || 4;
-        const rankB = order[b.realStatus] || 4;
-        return rankA - rankB;
-      });
+    // Separate ordered and unordered astrologers
+    const ordered = serializedAstrologers.filter(a => a.displayOrder && a.displayOrder < 999999);
+    const unordered = serializedAstrologers.filter(a => !a.displayOrder || a.displayOrder >= 999999);
+
+    // Sort ordered by displayOrder
+    ordered.sort((a, b) => a.displayOrder - b.displayOrder);
+
+    // Sort unordered based on criteria
+    unordered.sort((a, b) => {
+      if (sortBy === 'rating-high-low') {
+        if (b.ratings?.average !== a.ratings?.average) return (b.ratings?.average || 0) - (a.ratings?.average || 0);
+        return (b.ratings?.total || 0) - (a.ratings?.total || 0);
+      }
+      if (sortBy === 'price-low-high') return (a.pricing?.chat || 0) - (b.pricing?.chat || 0);
+      if (sortBy === 'price-high-low') return (b.pricing?.chat || 0) - (a.pricing?.chat || 0);
+      if (sortBy === 'exp-high-low') return (b.experienceYears || 0) - (a.experienceYears || 0);
+      if (sortBy === 'exp-low-high') return (a.experienceYears || 0) - (b.experienceYears || 0);
+      if (sortBy === 'orders-high-low') return (b.stats?.totalOrders || 0) - (a.stats?.totalOrders || 0);
+      
+      // Default / popularity: sort by online status, then ratings, then orders
+      const statusOrder: Record<string, number> = { live: 1, online: 2, busy: 3, offline: 4 };
+      const rankA = statusOrder[a.realStatus] || 4;
+      const rankB = statusOrder[b.realStatus] || 4;
+      if (rankA !== rankB) return rankA - rankB;
+      if (b.ratings?.average !== a.ratings?.average) return (b.ratings?.average || 0) - (a.ratings?.average || 0);
+      return (b.stats?.totalOrders || 0) - (a.stats?.totalOrders || 0);
+    });
+
+    // Reconstruct array with exact positions for ordered astrologers
+    const combined: any[] = [];
+    
+    // Place ordered astrologers
+    for (const a of ordered) {
+      let targetIndex = Math.max(0, a.displayOrder - 1);
+      // Find first available slot
+      while (combined[targetIndex] !== undefined) {
+        targetIndex++;
+      }
+      combined[targetIndex] = a;
     }
+
+    // Place unordered astrologers in remaining gaps
+    let unorderedIdx = 0;
+    for (let i = 0; unorderedIdx < unordered.length; i++) {
+      if (combined[i] === undefined) {
+        combined[i] = unordered[unorderedIdx++];
+      }
+    }
+
+    // Filter out any trailing empty slots if displayOrder was sparse
+    const finalArray = combined.filter(a => a !== undefined);
+
+    // Apply pagination
+    serializedAstrologers = finalArray.slice(skip, skip + limit);
 
     // Count online astrologers matching same filters
     const onlineQuery = { ...finalQuery };
@@ -495,14 +535,19 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
-      .sort({ 'ratings.average': -1, 'stats.totalOrders': -1 })
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats displayOrder')
+      .sort({ displayOrder: 1, 'ratings.average': -1, 'stats.totalOrders': -1 })
       .limit(limit)
       .lean()
       .exec();
 
     const serializedAstrologers = this.serializeAstrologers(astrologers, 'user');
     serializedAstrologers.sort((a, b) => {
+      const aOrdered = a.displayOrder && a.displayOrder < 999999;
+      const bOrdered = b.displayOrder && b.displayOrder < 999999;
+      if (aOrdered && !bOrdered) return -1;
+      if (!aOrdered && bOrdered) return 1;
+      if (aOrdered && bOrdered) return a.displayOrder - b.displayOrder;
       const order: Record<string, number> = { live: 1, online: 2, busy: 3, offline: 4 };
       const rankA = order[a.realStatus] || 4;
       const rankB = order[b.realStatus] || 4;
@@ -536,14 +581,19 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
-      .sort({ 'ratings.average': -1, 'ratings.total': -1 })
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats displayOrder')
+      .sort({ displayOrder: 1, 'ratings.average': -1, 'ratings.total': -1 })
       .limit(limit)
       .lean()
       .exec();
 
     const serializedAstrologers = this.serializeAstrologers(astrologers, 'user');
     serializedAstrologers.sort((a, b) => {
+      const aOrdered = a.displayOrder && a.displayOrder < 999999;
+      const bOrdered = b.displayOrder && b.displayOrder < 999999;
+      if (aOrdered && !bOrdered) return -1;
+      if (!aOrdered && bOrdered) return 1;
+      if (aOrdered && bOrdered) return a.displayOrder - b.displayOrder;
       const order: Record<string, number> = { live: 1, online: 2, busy: 3, offline: 4 };
       const rankA = order[a.realStatus] || 4;
       const rankB = order[b.realStatus] || 4;
@@ -578,8 +628,8 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
-      .sort({ 'ratings.average': -1, 'availability.lastActive': -1 })
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats displayOrder')
+      .sort({ displayOrder: 1, 'ratings.average': -1, 'availability.lastActive': -1 })
       .limit(limit)
       .lean()
       .exec();
@@ -615,8 +665,8 @@ export class AstrologersService {
 
     const astrologers = await this.astrologerModel
       .find(query)
-      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats')
-      .sort({ 'ratings.average': -1, 'stats.totalOrders': -1 })
+      .select('name slug bio profilePicture experienceYears specializations languages ratings pricing availability stats displayOrder')
+      .sort({ displayOrder: 1, 'ratings.average': -1, 'stats.totalOrders': -1 })
       .limit(limit)
       .lean()
       .exec();
@@ -761,7 +811,7 @@ export class AstrologersService {
     const liveAstrologers = await this.astrologerModel
       .find(query)
       .select('name slug profilePicture specializations ratings availability.liveStreamId availability.lastActive stats')
-      .sort({ 'ratings.average': -1, 'availability.lastActive': -1 })
+      .sort({ displayOrder: 1, 'ratings.average': -1, 'availability.lastActive': -1 })
       .limit(limit)
       .lean()
       .exec();

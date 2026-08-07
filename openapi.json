@@ -5708,6 +5708,29 @@
         ]
       }
     },
+    "/api/v1/admin/astrologers/{astrologerId}/display-order": {
+      "patch": {
+        "operationId": "AdminAstrologersController_updateDisplayOrder",
+        "parameters": [
+          {
+            "name": "astrologerId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminAstrologers"
+        ]
+      }
+    },
     "/api/v1/admin/astrologers/penalties/{penaltyId}/waive": {
       "post": {
         "operationId": "AdminAstrologersController_waivePenalty",

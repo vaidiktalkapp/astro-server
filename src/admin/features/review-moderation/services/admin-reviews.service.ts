@@ -247,6 +247,9 @@ export class AdminReviewModerationService {
     if (updateData.reviewText !== undefined) {
       review.reviewText = updateData.reviewText;
     }
+    if (updateData.reviewDate !== undefined) {
+      review.reviewDate = new Date(updateData.reviewDate);
+    }
     if (review.isTestData) {
       if (updateData.userName !== undefined) review.testUserName = updateData.userName;
       if (updateData.userImage !== undefined) review.testUserImage = updateData.userImage;

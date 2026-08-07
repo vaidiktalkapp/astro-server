@@ -259,6 +259,20 @@ export class AdminAstrologersController {
   }
 
   /**
+   * PATCH /admin/astrologers/:astrologerId/display-order
+   * Update astrologer display order
+   */
+  @Patch(':astrologerId/display-order')
+  @RequirePermissions(Permissions.ASTROLOGERS_EDIT)
+  async updateDisplayOrder(
+    @Param('astrologerId') astrologerId: string,
+    @CurrentAdmin() admin: any,
+    @Body('displayOrder', ParseIntPipe) displayOrder: number,
+  ) {
+    return this.adminAstrologersService.updateDisplayOrder(astrologerId, admin._id, displayOrder);
+  }
+
+  /**
    * POST /admin/astrologers/penalties/:penaltyId/waive
    * Waive a penalty
    */

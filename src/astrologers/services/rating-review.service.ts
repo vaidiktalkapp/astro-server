@@ -328,7 +328,7 @@ export class RatingReviewService {
         reviewText: review.reviewText,
         serviceType: review.serviceType,
         duration: review.sessionDuration,
-        reviewDate: review.createdAt,
+        reviewDate: review.reviewDate || review.createdAt,
         isEdited: review.isEdited,
         editedAt: review.editedAt,
         isTestData: review.isTestData || false,
@@ -436,6 +436,7 @@ export class RatingReviewService {
       moderatedBy: new Types.ObjectId(adminId),
       moderatedAt: new Date(),
       createdAt: new Date(),
+      reviewDate: customReview.reviewDate ? new Date(customReview.reviewDate) : new Date(),
       isTestData: true, // Use test flag to inject custom user data
       testUserName: customReview.userName || 'Anonymous',
       testUserImage: customReview.userImage || null,

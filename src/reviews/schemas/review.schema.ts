@@ -67,6 +67,10 @@ export class Review {
   @Prop()
   testUserImage?: string;
 
+  // ✅ Custom review date
+  @Prop({ type: Date, default: Date.now })
+  reviewDate: Date;
+
   @Prop({ default: false, index: true })
   isDeleted: boolean;
 

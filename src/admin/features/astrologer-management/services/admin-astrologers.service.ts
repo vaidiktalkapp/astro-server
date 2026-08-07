@@ -63,7 +63,7 @@ export class AdminAstrologersService {
       this.astrologerModel
         .find(query)
         .populate('registrationId')
-        .sort({ createdAt: -1 })
+        .sort({ displayOrder: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
@@ -656,6 +656,53 @@ export class AdminAstrologersService {
     return {
       success: true,
       message: `Astrologer scheduled for permanent deletion on ${deletionDate.toLocaleDateString()}`,
+    };
+  }
+
+  /**
+   * Update astrologer display order
+   */
+  async updateDisplayOrder(astrologerId: string, adminId: string, displayOrder: number): Promise<any> {
+    const astrologer = await this.astrologerModel.findById(astrologerId);
+    if (!astrologer) {
+      throw new NotFoundException('Astrologer not found');
+    }
+
+    // Map 0 to 999999 for backend sorting
+    const finalOrder = displayOrder === 0 ? 999999 : displayOrder;
+
+    if (finalOrder !== 999999) {
+      // ✅ Validate unique display order only for assigned orders
+      const orderExists = await this.astrologerModel.exists({
+        displayOrder: finalOrder,
+        _id: { $ne: astrologerId }
+      });
+
+      if (orderExists) {
+        throw new BadRequestException('Display order already exists. Please choose a different order number.');
+      }
+    }
+
+    const oldOrder = astrologer.displayOrder ?? 999999;
+    await this.astrologerModel.updateOne({ _id: astrologerId }, { $set: { displayOrder: finalOrder } });
+    // Log activity
+    await this.activityLogService.log({
+      adminId,
+      action: 'astrologer.display_order_updated',
+      module: 'astrologers',
+      targetId: astrologerId,
+      targetType: 'Astrologer',
+      status: 'success',
+      changes: {
+        before: { displayOrder: oldOrder },
+        after: { displayOrder: finalOrder },
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Display order updated successfully',
+      data: { displayOrder },
     };
   }
 
