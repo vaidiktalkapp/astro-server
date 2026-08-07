@@ -48,16 +48,23 @@ export class AdminAuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check if account is locked
-    if (admin.lockedUntil && admin.lockedUntil > new Date()) {
-      const minutesLeft = Math.ceil((admin.lockedUntil.getTime() - Date.now()) / 60000);
-      this.logger.warn(`Login attempt on locked account: ${email}`);
-      throw new UnauthorizedException(
-        `Account is locked. Try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}`
-      );
+    // Check if account is temporarily locked
+    if (admin.status === 'locked' && admin.lockedUntil) {
+      if (admin.lockedUntil > new Date()) {
+        const minutesLeft = Math.ceil((admin.lockedUntil.getTime() - Date.now()) / 60000);
+        this.logger.warn(`Login attempt on locked account: ${email}`);
+        throw new UnauthorizedException(
+          `Account is locked. Try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}`
+        );
+      } else {
+        // Lock period has expired, auto-unlock
+        admin.status = 'active';
+        admin.lockedUntil = undefined;
+        admin.failedLoginAttempts = 0;
+      }
     }
 
-    // Check account status
+    // Check account status (if still not active, reject)
     if (admin.status !== 'active') {
       this.logger.warn(`Login attempt on ${admin.status} account: ${email}`);
       throw new UnauthorizedException(`Account is ${admin.status}`);
