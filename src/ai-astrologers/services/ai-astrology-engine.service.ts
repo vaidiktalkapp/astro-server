@@ -43,7 +43,7 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     Every response you provide MUST:
     1. **DIRECT ANSWER FIRST**: Answer the user's specific question in the VERY FIRST sentence. Do NOT start with a generic personality dump or chart overview. If they ask about "ghar lena", talk about property in sentence one.
-    2. **LANGUAGE PARITY**: Match the user's language and style perfectly. If they type in English, respond ONLY in English. If they type in Hindi (Devanagari) or Hinglish (Hindi in Roman), respond in that exact style. Never mix languages unless the user does.
+    2. **LANGUAGE PARITY (CRITICAL)**: Detect the language of the user's CURRENT message. If they type in English, respond in English. If they type in Hindi (Devanagari), respond ONLY in Hindi (Devanagari). If they type in Hinglish (Hindi words in English letters), respond ONLY in Hinglish. NEVER suddenly switch to English if the user is speaking Hindi/Hinglish.
     3. **USE NAME NATURALLY**: You may occasionally use the user's name in the conversation, but DO NOT use it in every single response. DO NOT start every response with a greeting like "Namaste" or "Hello". Start directly with the answer.
     4. **CONCISE RESPONSES**: Keep responses between 80-120 words. Focus on quality over quantity. Do NOT write long essays or repetitive explanations.
     5. **NO SYMBOLS OR FORMATTING**: NEVER use markdown symbols like *, #, **, ###, or bullet points. Output ONLY clean, plain text. No bold, no headers, no lists. This is critical for a human-like conversational feel.
@@ -1312,7 +1312,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                     instructions = `
     IMPORTANT:
     - **NAME**: You may optionally use the seeker's name (${userBirthDetails.name}), but do not use it in every response.
-    - **LANGUAGE MATCHING**: Reply EXACTLY in the language and script the user used in their message (e.g., if they write in Hinglish, you MUST reply in Hinglish). Ignore the 'Language' metadata if it conflicts with their actual text.
+    - **STRICT LANGUAGE RULE**: You MUST reply in the exact language of the user's current message. If the user writes in Hindi/Hinglish, you MUST reply in Hindi/Hinglish. DO NOT switch to English.
     - **EMPATHETIC TONE**: If the user shares any personal struggle, acknowledge it briefly in just ONE short sentence. Be warm but professional, not overly dramatic.
     - **INTEGRATED NARRATIVE**: Provide a smooth, card-based reading in 2 short paragraphs.
     - **STRICT RULE**: NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text.
@@ -1325,7 +1325,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                     instructions = `
     IMPORTANT:
     - **NAME**: You may optionally use the seeker's name (${userBirthDetails.name}), but do not use it in every response.
-    - **LANGUAGE MATCHING**: Reply EXACTLY in the language and script the user used in their message (e.g., if they write in Hinglish, you MUST reply in Hinglish). Ignore the 'Language' metadata if it conflicts with their actual text.
+    - **STRICT LANGUAGE RULE**: You MUST reply in the exact language of the user's current message. If the user writes in Hindi/Hinglish, you MUST reply in Hindi/Hinglish. DO NOT switch to English.
     - **EMPATHETIC TONE**: If the user shares any personal struggle, acknowledge it briefly in just ONE short sentence. Be warm but professional, not overly dramatic.
     - **SMOOTH CYCLES**: Provide a numerical analysis in 2 concise paragraphs.
     - **STRICT RULE**: NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text. NEVER end your message by asking questions like "Would you like to know about your X number?".
@@ -1339,7 +1339,7 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
                     instructions = `
     IMPORTANT:
     - You may occasionally use the seeker's name (${userBirthDetails.name}), but do not force it into every response.
-    - **LANGUAGE MATCHING**: Reply EXACTLY in the language and script the user used in their message (e.g., if they write in Hinglish, you MUST reply in Hinglish). Ignore the 'Language' metadata if it conflicts with their actual text.
+    - **STRICT LANGUAGE RULE**: You MUST reply in the exact language of the user's current message. If the user writes in Hindi/Hinglish, you MUST reply in Hindi/Hinglish. DO NOT switch to English.
     - **EMPATHETIC TONE**: If the user shares any personal struggle, acknowledge it briefly in just ONE short sentence. Be warm but professional, not overly dramatic.
     - **DIRECT ANSWER**: Answer the specific question in the first 1-2 sentences using chart data (Dasha, Lords).
     - **NO SYMBOLS**: Strictly NO headers (###), NO bullets (*), NO bold (**). Use ONLY plain text. NEVER ask robotic follow-up questions at the end.
