@@ -87,8 +87,35 @@ export class AstronomyService {
         return await this.calculateAstrology('calendar', { year, month, lat, lon, tzone });
     }
 
+    private readonly panchangCache = new Map<string, { data: any; timestamp: number }>();
+
     async getTodayPanchang(lat: string, lon: string, tzone: number = 5.5, date?: string): Promise<any> {
-        return await this.calculateAstrology('today_panchang', { lat, lon, tzone, date });
+        // Create a unique cache key based on location and date
+        // Round lat/lon to 2 decimal places to group nearby requests
+        const cacheKey = `${Number(lat).toFixed(2)}_${Number(lon).toFixed(2)}_${tzone}_${date || new Date().toISOString().split('T')[0]}`;
+        
+        const cached = this.panchangCache.get(cacheKey);
+        const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache
+        
+        if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+            this.logger.debug(`Returning cached panchang for ${cacheKey}`);
+            return cached.data;
+        }
+
+        const data = await this.calculateAstrology('today_panchang', { lat, lon, tzone, date });
+        
+        // Save to cache
+        this.panchangCache.set(cacheKey, { data, timestamp: Date.now() });
+        
+        // Cleanup old cache entries to prevent memory leak (keep size under 1000)
+        if (this.panchangCache.size > 1000) {
+            const keysToDelete = Array.from(this.panchangCache.keys()).slice(0, 100);
+            for (const key of keysToDelete) {
+                this.panchangCache.delete(key);
+            }
+        }
+        
+        return data;
     }
 
     async calculateMuhurat(

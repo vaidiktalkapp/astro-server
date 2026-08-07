@@ -122,8 +122,9 @@ def _find_rise_set_by_search(jd_ref, body_id, lon, lat):
     step = 1.0 / 144  # 10-minute steps for better accuracy
 
     # Find rise (altitude crosses from below to above target)
+    num_steps = int((search_end - search_start) / step)
     prev_alt = _get_altitude(search_start, body_id, lon, lat)
-    for i in range(1, 145):
+    for i in range(1, num_steps + 1):
         t = search_start + i * step
         alt = _get_altitude(t, body_id, lon, lat)
         if prev_alt <= target_alt and alt > target_alt:
@@ -139,12 +140,10 @@ def _find_rise_set_by_search(jd_ref, body_id, lon, lat):
             break
         prev_alt = alt
 
-    # Find set (altitude crosses from above to below target) - search after rise
-    start_set = rise_jd + 0.01 if rise_jd else search_start + 0.25
-    prev_alt = _get_altitude(start_set, body_id, lon, lat)
-    steps_remaining = int((search_end - start_set) / step)
-    for i in range(1, steps_remaining + 1):
-        t = start_set + i * step
+    # Find set (altitude crosses from above to below target) - search independently
+    prev_alt = _get_altitude(search_start, body_id, lon, lat)
+    for i in range(1, num_steps + 1):
+        t = search_start + i * step
         if t > search_end:
             break
         alt = _get_altitude(t, body_id, lon, lat)
