@@ -14586,6 +14586,65 @@
           "HeroSettings"
         ]
       }
+    },
+    "/api/v1/subscribers": {
+      "post": {
+        "operationId": "SubscribersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Subscribers"
+        ]
+      },
+      "get": {
+        "operationId": "SubscribersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Subscribers"
+        ]
+      }
+    },
+    "/api/v1/subscribers/{id}": {
+      "delete": {
+        "operationId": "SubscribersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Subscribers"
+        ]
+      }
     }
   },
   "info": {
@@ -15151,6 +15210,10 @@
         "properties": {}
       },
       "VerifyReportPaymentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateSubscriberDto": {
         "type": "object",
         "properties": {}
       }

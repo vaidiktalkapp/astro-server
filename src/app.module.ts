@@ -59,6 +59,7 @@ import { PujaBookingsModule } from './puja-bookings/puja-bookings.module';
 import { ReportBookingsModule } from './report-bookings/report-bookings.module';
 import { HeroSettingsModule } from './hero-settings/hero-settings.module';
 import { SeoSettingsModule } from './seo-settings/seo-settings.module';
+import { SubscribersModule } from './subscribers/subscribers.module';
 @Module({
   imports: [
     // Global configuration
@@ -166,6 +167,7 @@ import { SeoSettingsModule } from './seo-settings/seo-settings.module';
     PujaBookingsModule,
     ReportBookingsModule,
     HeroSettingsModule,
+    SubscribersModule,
   ],
   controllers: [AppController],
   providers: [
