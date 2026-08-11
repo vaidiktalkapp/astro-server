@@ -43,6 +43,42 @@
         ]
       }
     },
+    "/api/v1/seo-settings": {
+      "get": {
+        "operationId": "SeoSettingsController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "SeoSettings"
+        ]
+      },
+      "put": {
+        "operationId": "SeoSettingsController_updateSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSeoSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "SeoSettings"
+        ]
+      }
+    },
     "/api/v1/admin/horoscope": {
       "post": {
         "operationId": "HoroscopeController_create",
@@ -14539,6 +14575,10 @@
   "servers": [],
   "components": {
     "schemas": {
+      "UpdateSeoSettingsDto": {
+        "type": "object",
+        "properties": {}
+      },
       "CreateAdminDto": {
         "type": "object",
         "properties": {}

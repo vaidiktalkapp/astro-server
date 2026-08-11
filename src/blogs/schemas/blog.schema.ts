@@ -39,6 +39,9 @@ export class Blog extends Document {
   @Prop()
   seoKeywords: string;
 
+  @Prop()
+  schemaMarkup: string; // JSON-LD schema markup
+
   @Prop({ default: 'VaidikTalk Editorial' })
   authorName: string;
 

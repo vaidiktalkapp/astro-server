@@ -18,6 +18,19 @@ export class HeroSetting extends Document {
 
   @Prop({ default: "Chat, call, or consult with India's best astrologers and get accurate solutions to your life's challenges." })
   subheading: string;
+
+  // SEO Fields for Home Page
+  @Prop({ default: '' })
+  seoTitle: string;
+
+  @Prop({ default: '' })
+  seoDescription: string;
+
+  @Prop({ default: '' })
+  seoKeywords: string;
+
+  @Prop({ default: '' })
+  schemaMarkup: string;
 }
 
 export const HeroSettingSchema = SchemaFactory.createForClass(HeroSetting);

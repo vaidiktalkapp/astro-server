@@ -216,11 +216,16 @@ export class AstrologersController {
 
     console.log(`📝 [AstrologersController] Review attempt: astrologerId=${astrologerId}, userId=${userId}, orderId=${reviewDto.orderId}`);
 
-    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
-    if (!astrologer || !astrologer.data) {
-      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
+    let resolvedId = astrologerId;
+    try {
+      const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
+      if (astrologer && astrologer.data) {
+        resolvedId = astrologer.data._id.toString();
+      }
+    } catch (error) {
+      // Fallback for AI Astrologers where ID is passed directly
+      resolvedId = astrologerId;
     }
-    const resolvedId = astrologer.data._id.toString();
 
     return this.ratingReviewService.addReview({
       userId,
@@ -254,11 +259,16 @@ export class AstrologersController {
       throw new HttpException('Limit must be between 1 and 100', HttpStatus.BAD_REQUEST);
     }
 
-    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
-    if (!astrologer || !astrologer.data) {
-      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
+    let resolvedId = astrologerId;
+    try {
+      const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
+      if (astrologer && astrologer.data) {
+        resolvedId = astrologer.data._id.toString();
+      }
+    } catch (error) {
+      // Fallback for AI Astrologers where ID is passed directly
+      resolvedId = astrologerId;
     }
-    const resolvedId = astrologer.data._id.toString();
 
     return this.ratingReviewService.getAstrologerReviews(
       resolvedId, 
@@ -273,11 +283,17 @@ export class AstrologersController {
    */
   @Get(':astrologerId/reviews/stats')
   async getReviewStats(@Param('astrologerId') astrologerId: string) {
-    const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
-    if (!astrologer || !astrologer.data) {
-      throw new HttpException('Astrologer not found', HttpStatus.NOT_FOUND);
+    let resolvedId = astrologerId;
+    try {
+      const astrologer = await this.astrologersService.getAstrologerDetails(astrologerId);
+      if (astrologer && astrologer.data) {
+        resolvedId = astrologer.data._id.toString();
+      }
+    } catch (error) {
+      // Fallback for AI Astrologers where ID is passed directly
+      resolvedId = astrologerId;
     }
-    return this.ratingReviewService.getReviewStats(astrologer.data._id.toString());
+    return this.ratingReviewService.getReviewStats(resolvedId);
   }
 
   /**

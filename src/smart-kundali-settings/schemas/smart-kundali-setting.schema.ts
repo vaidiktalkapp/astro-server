@@ -133,6 +133,19 @@ export class SmartKundaliSetting {
 
   @Prop({ type: MockupsSetting, default: () => ({}) })
   mockups: MockupsSetting;
+
+  // SEO Fields
+  @Prop({ default: '' })
+  seoTitle: string;
+
+  @Prop({ default: '' })
+  seoDescription: string;
+
+  @Prop({ default: '' })
+  seoKeywords: string;
+
+  @Prop({ default: '' })
+  schemaMarkup: string;
 }
 
 export const SmartKundaliSettingSchema = SchemaFactory.createForClass(SmartKundaliSetting);

@@ -655,11 +655,20 @@ export class CallSessionService {
         const vapiApiKey = this.configService.get<string>('VAPI_API_KEY');
         if (vapiApiKey) {
           // Fire-and-forget to not block the billing update
-          axios.post(
-            `https://api.vapi.ai/call/${session.vapiCallId}/control`,
-            { type: 'end-call' },
-            { headers: { 'Authorization': `Bearer ${vapiApiKey}`, 'Content-Type': 'application/json' } }
-          ).then(() => {
+          axios.get(`https://api.vapi.ai/call/${session.vapiCallId}`, {
+            headers: { 'Authorization': `Bearer ${vapiApiKey}` }
+          }).then(response => {
+            const controlUrl = response.data?.monitor?.controlUrl;
+            if (controlUrl) {
+              return axios.post(
+                controlUrl,
+                { type: 'end-call' },
+                { headers: { 'Authorization': `Bearer ${vapiApiKey}`, 'Content-Type': 'application/json' } }
+              );
+            } else {
+               this.logger.warn(`⚠️ [CallSessionService] No controlUrl found for Vapi call ${session.vapiCallId}`);
+            }
+          }).then(() => {
             this.logger.log(`✅ [CallSessionService] Successfully forcefully killed Vapi call ${session.vapiCallId}`);
           }).catch((err) => {
             this.logger.error(`❌ [CallSessionService] Failed to force kill Vapi call: ${err.message}`);

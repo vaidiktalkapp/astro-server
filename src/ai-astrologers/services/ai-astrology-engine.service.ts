@@ -10,6 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { AiResponseCache } from '../schemas/ai-response-cache.schema';
 import { ManualHoroscope } from '../schemas/manual-horoscope.schema';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class AiAstrologyEngineService implements OnModuleDestroy {
@@ -231,6 +232,33 @@ Respond with ONLY the JSON object. No preamble.`,
     onModuleDestroy() {
         if (this.cleanupInterval) {
             clearInterval(this.cleanupInterval);
+        }
+    }
+
+    /**
+     * Cron Job to warm up the horoscope cache at exactly midnight (IST) every day.
+     * This prevents the first user from experiencing a 30-second AI generation delay.
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'Asia/Kolkata' })
+    async handleHoroscopeWarmup() {
+        this.logger.log('🌅 Starting daily horoscope cache warmup (Cold Start Prevention)...');
+        try {
+            // Sequentially generate to avoid OpenAI rate limits
+            await this.getDailyHoroscopeAllSigns('today', 'English');
+            await this.getDailyHoroscopeAllSigns('tomorrow', 'English');
+            await this.getDailyHoroscopeAllSigns('weekly', 'English');
+            await this.getDailyHoroscopeAllSigns('monthly', 'English');
+            await this.getDailyHoroscopeAllSigns('yearly', 'English');
+            
+            await this.getDailyHoroscopeAllSigns('today', 'Hindi');
+            await this.getDailyHoroscopeAllSigns('tomorrow', 'Hindi');
+            await this.getDailyHoroscopeAllSigns('weekly', 'Hindi');
+            await this.getDailyHoroscopeAllSigns('monthly', 'Hindi');
+            await this.getDailyHoroscopeAllSigns('yearly', 'Hindi');
+            
+            this.logger.log('✅ Daily horoscope cache warmup completed successfully.');
+        } catch (error: any) {
+            this.logger.error(`❌ Error during horoscope warmup: ${error.message}`);
         }
     }
 

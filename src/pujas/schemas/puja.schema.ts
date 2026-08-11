@@ -79,6 +79,19 @@ export class Puja {
 
   @Prop({ type: [String], default: [] })
   whyChooseUs: string[];
+
+  // SEO Fields
+  @Prop({ default: '' })
+  seoTitle: string;
+
+  @Prop({ default: '' })
+  seoDescription: string;
+
+  @Prop({ default: '' })
+  seoKeywords: string;
+
+  @Prop({ default: '' })
+  schemaMarkup: string;
 }
 
 export const PujaSchema = SchemaFactory.createForClass(Puja);

@@ -58,7 +58,7 @@ import { SmartKundaliSettingsModule } from './smart-kundali-settings/smart-kunda
 import { PujaBookingsModule } from './puja-bookings/puja-bookings.module';
 import { ReportBookingsModule } from './report-bookings/report-bookings.module';
 import { HeroSettingsModule } from './hero-settings/hero-settings.module';
-
+import { SeoSettingsModule } from './seo-settings/seo-settings.module';
 @Module({
   imports: [
     // Global configuration
@@ -68,6 +68,7 @@ import { HeroSettingsModule } from './hero-settings/hero-settings.module';
       load: [databaseConfig, redisConfig, jwtConfig],
       envFilePath: '.env',
     }),
+    SeoSettingsModule,
     HoroscopeModule,
     // MongoDB connection
     MongooseModule.forRootAsync({
