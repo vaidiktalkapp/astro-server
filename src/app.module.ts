@@ -60,6 +60,8 @@ import { ReportBookingsModule } from './report-bookings/report-bookings.module';
 import { HeroSettingsModule } from './hero-settings/hero-settings.module';
 import { SeoSettingsModule } from './seo-settings/seo-settings.module';
 import { SubscribersModule } from './subscribers/subscribers.module';
+import { PageSeoSettingsModule } from './page-seo-settings/page-seo-settings.module';
+
 @Module({
   imports: [
     // Global configuration
@@ -168,6 +170,7 @@ import { SubscribersModule } from './subscribers/subscribers.module';
     ReportBookingsModule,
     HeroSettingsModule,
     SubscribersModule,
+    PageSeoSettingsModule,
   ],
   controllers: [AppController],
   providers: [
