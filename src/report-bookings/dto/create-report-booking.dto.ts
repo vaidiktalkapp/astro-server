@@ -38,6 +38,9 @@ export class CreateReportBookingDto {
   state?: string;
 
   @IsOptional()
+  partnerDetails?: any;
+
+  @IsOptional()
   @IsString()
   language?: string;
 

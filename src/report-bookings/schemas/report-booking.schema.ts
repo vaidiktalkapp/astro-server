@@ -38,6 +38,18 @@ export class ReportBooking {
   @Prop()
   state?: string;
 
+  @Prop({ type: Object })
+  partnerDetails?: {
+    name: string;
+    dob: string;
+    tob: string;
+    pob: string;
+    country?: string;
+    state?: string;
+    email?: string;
+    phone?: string;
+  };
+
   @Prop()
   language?: string;
 

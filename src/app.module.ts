@@ -61,6 +61,7 @@ import { HeroSettingsModule } from './hero-settings/hero-settings.module';
 import { SeoSettingsModule } from './seo-settings/seo-settings.module';
 import { SubscribersModule } from './subscribers/subscribers.module';
 import { PageSeoSettingsModule } from './page-seo-settings/page-seo-settings.module';
+import { MenusModule } from './menus/menus.module';
 
 @Module({
   imports: [
@@ -171,6 +172,7 @@ import { PageSeoSettingsModule } from './page-seo-settings/page-seo-settings.mod
     HeroSettingsModule,
     SubscribersModule,
     PageSeoSettingsModule,
+    MenusModule,
   ],
   controllers: [AppController],
   providers: [

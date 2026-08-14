@@ -4,7 +4,7 @@ import { CreatePageSeoSettingDto } from './dto/create-page-seo-setting.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
-@Controller('api/v1/page-seo')
+@Controller('page-seo')
 export class PageSeoSettingsController {
   constructor(private readonly pageSeoSettingsService: PageSeoSettingsService) {}
 
@@ -21,7 +21,7 @@ export class PageSeoSettingsController {
     return { success: true, data };
   }
 
-  @Get(':slug(*)')
+  @Get('*slug')
   async findOne(@Param('slug') slug: string) {
     const data = await this.pageSeoSettingsService.findBySlug(slug);
     return { success: true, data };
