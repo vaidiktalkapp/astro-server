@@ -84,6 +84,89 @@ MUHURAT_RULES = {
         "avoid_days": [1, 5],  # Tuesday, Saturday
         "shukla_paksha_required": True,
         "avoid_karanas": ["Vishti"],
+    },
+    "education": {
+        "label": "Education (Vidhyarambh)",
+        "auspicious_tithis": ["Dwitiya", "Tritiya", "Panchami", "Shashthi", "Dashami", "Ekadashi", "Dwadashi"],
+        "auspicious_nakshatras": ["Ashwini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Hasta", "Chitra", "Swati", "Shravana", "Dhanishta", "Shatabhisha", "Revati"],
+        "auspicious_yogas": ["Preeti", "Ayushman", "Saubhagya", "Shobhana", "Sukarma", "Dhriti", "Vriddhi", "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"],
+        "avoid_days": [],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
+    },
+    "engagement": {
+        "label": "Engagement (Sagai)",
+        "auspicious_tithis": ["Dwitiya", "Tritiya", "Panchami", "Saptami", "Dashami", "Ekadashi", "Trayodashi", "Purnima"],
+        "auspicious_nakshatras": ["Rohini", "Mrigashira", "Magha", "Uttara Phalguni", "Hasta", "Swati", "Anuradha", "Uttara Ashadha", "Uttara Bhadrapada", "Revati"],
+        "auspicious_yogas": ["Preeti", "Ayushman", "Saubhagya", "Shobhana", "Sukarma", "Dhriti", "Vriddhi", "Harshana", "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"],
+        "avoid_days": [1, 5],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
+    },
+    "foundation": {
+        "label": "Foundation Stone (Bhumi Pujan)",
+        "auspicious_tithis": ["Dwitiya", "Tritiya", "Panchami", "Saptami", "Dashami", "Ekadashi", "Trayodashi"],
+        "auspicious_nakshatras": ["Rohini", "Mrigashira", "Pushya", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Anuradha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Uttara Bhadrapada", "Revati"],
+        "auspicious_yogas": ["Preeti", "Ayushman", "Saubhagya", "Shobhana", "Sukarma", "Dhriti", "Vriddhi", "Harshana", "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"],
+        "avoid_days": [1, 5],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
+    },
+    "naming": {
+        "label": "Naming Ceremony (Namkaran)",
+        "auspicious_tithis": ["Prathama", "Dwitiya", "Tritiya", "Panchami", "Saptami", "Dashami", "Ekadashi", "Dwadashi", "Trayodashi"],
+        "auspicious_nakshatras": ["Ashwini", "Rohini", "Mrigashira", "Pushya", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Anuradha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Uttara Bhadrapada", "Revati"],
+        "auspicious_yogas": ["Preeti", "Ayushman", "Saubhagya", "Shobhana", "Sukarma", "Dhriti", "Vriddhi", "Harshana", "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"],
+        "avoid_days": [],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
+    },
+    "property": {
+        "label": "Property Purchase",
+        "auspicious_tithis": ["Prathama", "Panchami", "Shashthi", "Dashami", "Ekadashi", "Purnima/Amavasya"],
+        "auspicious_nakshatras": ["Ashwini", "Rohini", "Mrigashira", "Punarvasu", "Pushya", "Uttara Phalguni", "Hasta", "Swati", "Anuradha", "Uttara Ashadha", "Shravana", "Uttara Bhadrapada", "Revati"],
+        "auspicious_yogas": ["Preeti", "Ayushman", "Saubhagya", "Shobhana", "Sukarma", "Dhriti", "Vriddhi", "Harshana", "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"],
+        "avoid_days": [5],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
+    },
+    "tonsure": {
+        "label": "Tonsure (Mundan)",
+        "auspicious_tithis": ["Dwitiya", "Tritiya", "Panchami", "Saptami", "Dashami", "Ekadashi", "Trayodashi"],
+        "auspicious_nakshatras": ["Ashwini", "Mrigashira", "Pushya", "Hasta", "Chitra", "Swati", "Jyeshtha", "Shravana", "Dhanishta", "Shatabhisha"],
+        "auspicious_yogas": ["Preeti", "Ayushman", "Saubhagya", "Shobhana", "Sukarma", "Dhriti", "Vriddhi", "Harshana", "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"],
+        "avoid_days": [1],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
+    },
+    "vehicle": {
+        "label": "Vehicle Purchase",
+        "auspicious_tithis": ["Tritiya", "Chaturthi", "Panchami", "Saptami", "Dashami", "Ekadashi", "Trayodashi", "Purnima/Amavasya"],
+        "auspicious_nakshatras": ["Ashwini", "Rohini", "Punarvasu", "Pushya", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Anuradha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Uttara Bhadrapada", "Revati"],
+        "auspicious_yogas": ["Preeti", "Ayushman", "Saubhagya", "Shobhana", "Sukarma", "Dhriti", "Vriddhi", "Harshana", "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"],
+        "avoid_days": [1, 5],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
+    },
+    "general": {
+        "label": "General (Shubh Muhurat)",
+        "auspicious_tithis": [
+            "Dwitiya", "Tritiya", "Panchami", "Saptami",
+            "Dashami", "Ekadashi", "Trayodashi", "Purnima"
+        ],
+        "auspicious_nakshatras": [
+            "Ashwini", "Rohini", "Mrigashira", "Pushya", "Uttara Phalguni",
+            "Hasta", "Chitra", "Swati", "Anuradha", "Uttara Ashadha",
+            "Shravana", "Dhanishta", "Uttara Bhadrapada", "Revati"
+        ],
+        "auspicious_yogas": [
+            "Preeti", "Ayushman", "Saubhagya", "Shobhana",
+            "Sukarma", "Dhriti", "Vriddhi", "Harshana",
+            "Siddhi", "Shiva", "Siddha", "Sadhya", "Shubha"
+        ],
+        "avoid_days": [],
+        "shukla_paksha_required": False,
+        "avoid_karanas": ["Vishti"],
     }
 }
 
@@ -174,18 +257,6 @@ def get_special_yogas(panchang):
     return yogas
 
 
-def find_muhurats(category, start_date, end_date, lat, lon, tzone):
-    """
-    Scan a date range and return auspicious muhurat dates for the given category.
-    """
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
-
-    if category not in MUHURAT_RULES:
-        raise ValueError(f"Unknown category: {category}. Use: marriage, business, housewarming")
-
-    rules = MUHURAT_RULES[category]
-    results = []
-
 def check_eligibility_at_jd(jd, category, rules, lat, lon, tzone, daily_status=None):
     """
     Checks if a specific point in time is auspicious.
@@ -229,7 +300,8 @@ def check_eligibility_at_jd(jd, category, rules, lat, lon, tzone, daily_status=N
     else:
         is_eligible = (tithi_match or nakshatra_match or len(special_yogas) > 0) and (quality > 60) and not bad_karana
 
-    if category == "housewarming" and is_kharmas:
+    # Strict prohibitions for certain Samskaras
+    if category in ["housewarming", "foundation", "education", "tonsure", "engagement"] and is_kharmas:
         is_eligible = False
 
     reasons_good = []
@@ -344,10 +416,23 @@ def process_day(current_date, category, rules, lat, lon, tzone):
 def find_muhurats(category, start_date, end_date, lat, lon, tzone):
     """Scan a date range with parallel processing."""
     swe.set_sid_mode(swe.SIDM_LAHIRI)
-    if category not in MUHURAT_RULES:
-        raise ValueError(f"Unknown category: {category}")
-
-    rules = MUHURAT_RULES[category]
+    
+    cat_lower = category.lower()
+    rule_key = "general"
+    
+    if "marriage" in cat_lower or "vivah" in cat_lower: rule_key = "marriage"
+    elif "business" in cat_lower or "vyapar" in cat_lower: rule_key = "business"
+    elif "house" in cat_lower or "griha" in cat_lower: rule_key = "housewarming"
+    elif "education" in cat_lower or "vidhya" in cat_lower: rule_key = "education"
+    elif "engagement" in cat_lower or "sagai" in cat_lower: rule_key = "engagement"
+    elif "foundation" in cat_lower or "neev" in cat_lower: rule_key = "foundation"
+    elif "naming" in cat_lower or "namkaran" in cat_lower: rule_key = "naming"
+    elif "property" in cat_lower: rule_key = "property"
+    elif "tonsure" in cat_lower or "mundan" in cat_lower: rule_key = "tonsure"
+    elif "vehicle" in cat_lower or "vahan" in cat_lower: rule_key = "vehicle"
+    elif category in MUHURAT_RULES: rule_key = category
+    
+    rules = MUHURAT_RULES[rule_key]
     date_list = []
     curr = start_date
     while curr <= end_date:
@@ -360,14 +445,14 @@ def find_muhurats(category, start_date, end_date, lat, lon, tzone):
     if len(date_list) > 15:
         cpu_count = min(multiprocessing.cpu_count(), 8)
         with concurrent.futures.ProcessPoolExecutor(max_workers=cpu_count) as executor:
-            future_to_date = {executor.submit(process_day, d, category, rules, lat, lon, tzone): d for d in date_list}
+            future_to_date = {executor.submit(process_day, d, rule_key, rules, lat, lon, tzone): d for d in date_list}
             for future in concurrent.futures.as_completed(future_to_date):
                 res = future.result()
                 if res: all_results_raw.append(res)
     else:
         # Sequential for small ranges
         for d in date_list:
-            res = process_day(d, category, rules, lat, lon, tzone)
+            res = process_day(d, rule_key, rules, lat, lon, tzone)
             if res: all_results_raw.append(res)
 
     # Sort results by date
