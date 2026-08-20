@@ -241,25 +241,7 @@ Respond with ONLY the JSON object. No preamble.`,
      */
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'Asia/Kolkata' })
     async handleHoroscopeWarmup() {
-        this.logger.log('🌅 Starting daily horoscope cache warmup (Cold Start Prevention)...');
-        try {
-            // Sequentially generate to avoid OpenAI rate limits
-            await this.getDailyHoroscopeAllSigns('today', 'English');
-            await this.getDailyHoroscopeAllSigns('tomorrow', 'English');
-            await this.getDailyHoroscopeAllSigns('weekly', 'English');
-            await this.getDailyHoroscopeAllSigns('monthly', 'English');
-            await this.getDailyHoroscopeAllSigns('yearly', 'English');
-            
-            await this.getDailyHoroscopeAllSigns('today', 'Hindi');
-            await this.getDailyHoroscopeAllSigns('tomorrow', 'Hindi');
-            await this.getDailyHoroscopeAllSigns('weekly', 'Hindi');
-            await this.getDailyHoroscopeAllSigns('monthly', 'Hindi');
-            await this.getDailyHoroscopeAllSigns('yearly', 'Hindi');
-            
-            this.logger.log('✅ Daily horoscope cache warmup completed successfully.');
-        } catch (error: any) {
-            this.logger.error(`❌ Error during horoscope warmup: ${error.message}`);
-        }
+        this.logger.log('🌅 Horoscope AI Warmup is disabled as per user request. Only manual horoscopes will be used.');
     }
 
     private async mergeManualOverrides(aiData: any[], period: string, language: string, cacheKeyDate: string): Promise<any[]> {
@@ -291,247 +273,48 @@ Respond with ONLY the JSON object. No preamble.`,
      * Generate or return cached horoscopes for all 12 signs based on period.
      */
     public async getDailyHoroscopeAllSigns(period: string = 'today', language: string = 'English'): Promise<any> {
-        // Use India timezone
         const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
         const todayDate = now.toLocaleDateString('en-CA');
         
         let cacheKeyDate = todayDate;
-        let periodText = 'today';
-        let astrologicalContextInstruction = `Reference specific daily transits (e.g., "Moon transits your sign", "Sun enters...") or current daily planetary aspects.`;
-        let moodInstruction = `The mood for ${periodText} with an emoji (e.g., "🔥 Energetic", "😌 Calm"). Show the actual mood relevant to the sign.`;
-        let numberInstruction = `A single lucky integer between 1 and 9.`;
-        let colorInstruction = `A Tailwind CSS background color class representing their lucky color (e.g., "bg-red-500", "bg-purple-500").`;
         
         if (period.toLowerCase() === 'tomorrow') {
             const tmrw = new Date(now);
             tmrw.setDate(tmrw.getDate() + 1);
             cacheKeyDate = tmrw.toLocaleDateString('en-CA');
-            periodText = 'tomorrow';
         } else if (period.toLowerCase() === 'week' || period.toLowerCase() === 'weekly') {
             const currentDay = new Date(now);
             const day = currentDay.getDay();
-            const diff = currentDay.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
+            const diff = currentDay.getDate() - day + (day === 0 ? -6 : 1);
             const startOfWeek = new Date(currentDay.setDate(diff));
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(endOfWeek.getDate() + 6);
-            
-            // Create a week cache key like 2026-W31
             const firstDayOfYear = new Date(startOfWeek.getFullYear(), 0, 1);
             const pastDaysOfYear = (startOfWeek.getTime() - firstDayOfYear.getTime()) / 86400000;
             const weekNumber = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-            
             cacheKeyDate = `${startOfWeek.getFullYear()}-W${weekNumber}`;
-            periodText = `the week of ${startOfWeek.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${endOfWeek.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
-            astrologicalContextInstruction = `Reference broader planetary movements, week-long transits, or overarching themes relevant to the entire week. DO NOT use single-day transit references like "today Mars is in...".`;
-            moodInstruction = `The overall Theme for the week with an emoji (e.g., "🚀 Growth", "🧘‍♂️ Reflection", "💼 Focus").`;
-            numberInstruction = `null (Omit for weekly horoscopes to maintain astrological credibility).`;
-            colorInstruction = `null (Omit for weekly horoscopes to maintain astrological credibility).`;
         } else if (period.toLowerCase() === 'month' || period.toLowerCase() === 'monthly') {
             cacheKeyDate = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-            periodText = `the month of ${now.toLocaleDateString('en-US', {month:'long', year:'numeric'})}`;
-            astrologicalContextInstruction = `Reference major monthly transits (e.g., Sun/Venus changes), retrograde cycles, or slow-moving planetary shifts. DO NOT use single-day transit references.`;
-            moodInstruction = `The overall Theme for the month with an emoji (e.g., "⚖️ Karma", "🔮 Expansion").`;
-            numberInstruction = `null (Omit for monthly horoscopes to maintain astrological credibility).`;
-            colorInstruction = `null (Omit for monthly horoscopes to maintain astrological credibility).`;
         } else if (period.toLowerCase() === 'year' || period.toLowerCase() === 'yearly') {
             cacheKeyDate = `${now.getFullYear()}`;
-            periodText = `the year ${now.getFullYear()}`;
-            astrologicalContextInstruction = `Reference slow-moving planetary transits like Jupiter, Saturn, Rahu, and Ketu. DO NOT use single-day or fast transits. Highlight major shifts expected this year.`;
-            moodInstruction = `The overarching Theme for the year with an emoji (e.g., "🌟 Transformation", "🏆 Achievement").`;
-            numberInstruction = `null (Omit for yearly horoscopes to maintain astrological credibility).`;
-            colorInstruction = `null (Omit for yearly horoscopes to maintain astrological credibility).`;
         }
 
-        let overviewSentences = "3-4 sentences";
-        let aspectSentences = "2-3 sentences";
-        let targetWords = "250-350 words";
-        
-        if (period.toLowerCase() === 'week' || period.toLowerCase() === 'weekly') {
-            overviewSentences = "3-5 sentences";
-            aspectSentences = "3-4 detailed, complex sentences";
-            targetWords = "500-700 words";
-        } else if (period.toLowerCase() === 'month' || period.toLowerCase() === 'monthly') {
-            overviewSentences = "3-5 sentences";
-            aspectSentences = "4-5 detailed, complex sentences";
-            targetWords = "600-700 words";
-        } else if (period.toLowerCase() === 'year' || period.toLowerCase() === 'yearly') {
-            overviewSentences = "4-6 sentences";
-            aspectSentences = "4-5 detailed, complex sentences";
-            targetWords = "700-800 words";
-        }
-
-        const cacheKey = `horoscope_${period.toLowerCase()}_${language.toLowerCase()}_${cacheKeyDate}_v25`;
-
-        // 1. Check final data cache in MongoDB
-        let finalData = null;
-        const cached = await this.aiResponseCacheModel.findOne({ cacheKey }).exec();
-        if (cached && cached.data) {
-            finalData = cached.data;
-        }
-
-        // 2. Check if generation is already in progress to avoid concurrent API calls
-        const inProgressKey = `${cacheKey}_${cacheKeyDate}`;
-        if (!finalData && this.dailyHoroscopePromiseCache.has(inProgressKey)) {
-            finalData = await this.dailyHoroscopePromiseCache.get(inProgressKey);
-        }
-
-        if (finalData) {
-            return this.mergeManualOverrides(finalData, period, language, cacheKeyDate);
-        }
-
-        this.logger.log(`Generating new horoscopes for ${periodText} (${language})...`);
-        
-        // --- INJECT REAL EPHEMERIS ---
-        let ephemerisData = '';
-        try {
-            let targetDateObj = now;
-            if (period.toLowerCase() === 'tomorrow') {
-                targetDateObj = new Date(now);
-                targetDateObj.setDate(targetDateObj.getDate() + 1);
+        const defaultData = [
+            'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 
+            'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'
+        ].map(sign => ({
+            id: sign,
+            reading: "Astrological reading is currently being updated. Please check back later.",
+            mood: "🔮 Neutral",
+            luckyNumber: 7,
+            color: "bg-slate-400",
+            stats: {
+                love: { label: "Average", value: 50 },
+                career: { label: "Average", value: 50 },
+                health: { label: "Average", value: 50 },
+                money: { label: "Average", value: 50 }
             }
-            const targetDateStr = targetDateObj.toISOString().split('T')[0];
-            const planets = await this.astronomyService.calculatePlanets(targetDateStr, "12:00", "28.7041", "77.1025", 5.5);
-            
-            // Format for prompt
-            const isLongPeriod = ['week', 'weekly', 'month', 'monthly', 'year', 'yearly'].includes(period.toLowerCase());
-            
-            const filteredPlanets = Object.values(planets).filter((p: any) => {
-                if (isLongPeriod && p.name === 'Ascendant') return false;
-                if (['Uranus', 'Neptune', 'Pluto'].includes(p.name)) return false; // Strictly Vedic Navagraha only
-                return true;
-            });
-            
-            const transitsList = filteredPlanets.map((p: any) => `${p.name} is in ${p.sign} (${p.is_retrograde === 'true' || p.is_retrograde === true ? 'Retrograde/Vakri' : 'Direct/Margi'})`);
-            
-            const ZODIACS = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
-            let precalculatedHouses = `\n\n[PRE-CALCULATED HOUSE POSITIONS FOR EACH SIGN:]\n`;
-            
-            ZODIACS.forEach((zodiac, zIndex) => {
-                precalculatedHouses += `For ${zodiac}:\n`;
-                filteredPlanets.forEach((p: any) => {
-                    const pIndex = ZODIACS.indexOf(p.sign);
-                    if (pIndex !== -1) {
-                        const house = ((pIndex - zIndex + 12) % 12) + 1;
-                        precalculatedHouses += `- ${p.name} is in the ${house} house (${p.is_retrograde === 'true' || p.is_retrograde === true ? 'Retrograde' : 'Direct'})\n`;
-                    }
-                });
-                precalculatedHouses += '\n';
-            });
-            
-            ephemerisData = `\n\n[GLOBAL PLANETARY SNAPSHOT (START OF PERIOD):]\n${transitsList.join(', ')}\n${precalculatedHouses}`;
-        } catch (e) {
-            this.logger.warn(`Failed to fetch real ephemeris data for prompt injection: ${e.message}`);
-        }
+        }));
 
-        const prompt = `You are a premium Vedic Astrologer for 'VaidikTalk'. Generate a highly authentic, personalized-sounding Vedic horoscope for ${periodText} for all 12 zodiac signs.${ephemerisData}
-
-CRITICAL RULES FOR "reading":
-1. DEEP & PRACTICAL ADVICE (NO GENERIC FLUFF): Your advice must be as deep and actionable as a real, experienced Vedic Astrologer. Instead of "focus on your career", say "avoid starting new projects and focus on revising old tasks". Instead of "be careful with money", say "avoid lending money to others and stay away from risky stock investments". You MUST write ${aspectSentences} per heading. Do NOT write short paragraphs. Elaborate extensively.
-2. STRICTLY VEDIC ASTROLOGY: You MUST ONLY use the Navagraha (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu, Ketu). NEVER mention Western planets like Uranus, Neptune, or Pluto.
-3. PRE-CALCULATED HOUSE CONSISTENCY: I have PRE-CALCULATED all house placements for you in the "[PRE-CALCULATED HOUSE POSITIONS FOR EACH SIGN:]" section. You MUST use these EXACT house numbers. Do NOT calculate houses yourself. For the Moon, describe its initial influence without implying it stays there for the whole period.
-4. DIVERSE PLANETARY USAGE & STRICT NON-REPETITION: You MUST use EVERY planet (including Rahu, Ketu, Venus) from the snapshot at least once. It is STRICTLY FORBIDDEN to mention any specific planet more than two times across the entire reading. Do NOT repeat "Sun and Jupiter" or "Saturn" in 4 different headings. Allocate different planets to relevant headings based on their Vedic karakatva (e.g., Mercury for Education, Venus for Love/Marriage, Mars for Real Estate/Health, Rahu/Ketu for unexpected events). Connect the advice to the Vedic meaning of the house.
-5. NO CALENDAR DATES: You are strictly forbidden from writing any specific calendar dates (like "July 30", "August 1"). Use natural relative time phrases like "mid-week", "as the weekend approaches", or "towards the end of the phase". Single dates will cause critical failure.
-6. REMEDIES VS MANTRA SEPARATION: The "Remedies Horoscope" section MUST NOT contain any mantras or chanting. It must be a purely physical or actionable ritual (e.g., donating food to the poor, keeping a gratitude journal, offering water to a plant, or keeping a specific object). The "Mantra Horoscope" section must be strictly dedicated to the chanting of a specific Vedic mantra.
-7. STRUCTURE & LENGTH: Provide the reading in the following strict format:
-   First, write a general overview and planetary influence description (${overviewSentences}).
-   Then, separate with exactly two newlines ("\\n\\n").
-   Then, provide detailed, ${aspectSentences} insights for EACH of these specific aspects, formatted strictly with markdown H3 headings like this:
-   
-   ### [Zodiac Sign] Education Horoscope
-   [Insight]
-
-   ### [Zodiac Sign] Finances Horoscope
-   [Insight]
-   
-   ### [Zodiac Sign] Career Horoscope
-   [Insight]
-   
-   ### [Zodiac Sign] Family Horoscope
-   [Insight]
-   
-   ### [Zodiac Sign] Health Horoscope
-   [Insight]
-   
-   ### [Zodiac Sign] Love Life Horoscope
-   [Insight]
-   
-   ### [Zodiac Sign] Married Life Horoscope
-   [Insight]
-   
-   ### [Zodiac Sign] Lucky Colours Horoscope
-   [Insight]
-
-   ### [Zodiac Sign] Remedies Horoscope
-   [Insight]
-
-   ### [Zodiac Sign] Mantra Horoscope
-   [Insight]
-   
-   CRITICAL: Replace "[Zodiac Sign]" with the actual name of the sign (e.g., Aries, Taurus). You MUST include every single one of those 10 H3 headings. Use double newlines ("\\n\\n") between each point. Make it feel premium and deeply astrological. Overall length should be around ${targetWords} per sign.
-
-Return the response strictly as a JSON object containing a "data" array. Each object in the "data" array MUST have the following keys:
-- "id": lowercase zodiac sign name (e.g., "aries", "taurus", etc.)
-- "reading": The astrologically-backed, detailed reading for ${periodText} formatted with \\n\\n between paragraphs (as per rule 6).
-- "mood": ${moodInstruction} DO NOT repeat the same emoji across more than 2-3 signs.
-- "luckyNumber": ${numberInstruction} DO NOT repeat the same number across more than 2-3 signs.
-- "color": ${colorInstruction}
-- "stats": an object containing exactly 4 properties strictly in LOWERCASE: "love", "career", "health", "money". Each property should be an object like { "label": "Good", "value": 75 }. The "label" should be one of "Poor", "Average", "Good", "Strong", "Excellent", and the "value" should be a corresponding percentage from 10 to 100.
-
-Language Rule: The "reading" and "mood" text MUST be written in ${language}. Use natural conversational language.
-(Keep "id", "color" and keys in English).
-Return ONLY the JSON object. No trailing commas, no markdown fences, ensure valid escaped JSON.`;
-
-        const generationPromise = (async () => {
-            try {
-                const response = await this.openai.chat.completions.create({
-                    model: this.getVoiceModelName(), // gpt-4o-mini is perfect for this
-                    messages: [{ role: 'user', content: prompt }],
-                    response_format: { type: 'json_object' },
-                    temperature: 0.3,
-                    max_tokens: 12000
-                });
-
-                const content = response.choices[0].message.content || '{"data":[]}';
-                let parsed = JSON.parse(content);
-                let parsedData = parsed.data || parsed.horoscopes || parsed;
-
-                if (!Array.isArray(parsedData) && parsedData.zodiacs) {
-                    parsedData = parsedData.zodiacs;
-                }
-
-                if (parsedData && Array.isArray(parsedData) && parsedData.length > 0) {
-                    // Set expiration time depending on period
-                    const expiresAt = new Date();
-                    if (period.toLowerCase() === 'week' || period.toLowerCase() === 'weekly') {
-                        expiresAt.setDate(expiresAt.getDate() + 7);
-                    } else if (period.toLowerCase() === 'month' || period.toLowerCase() === 'monthly') {
-                        expiresAt.setMonth(expiresAt.getMonth() + 1);
-                    } else if (period.toLowerCase() === 'year' || period.toLowerCase() === 'yearly') {
-                        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-                    } else {
-                        expiresAt.setDate(expiresAt.getDate() + 2); // default 2 days for daily/tomorrow
-                    }
-
-                    await this.aiResponseCacheModel.findOneAndUpdate(
-                        { cacheKey },
-                        { cacheKey, data: parsedData, expiresAt },
-                        { upsert: true, new: true }
-                    ).exec();
-
-                    // Cleanup promise cache shortly after success
-                    setTimeout(() => this.dailyHoroscopePromiseCache.delete(inProgressKey), 10000);
-                    return this.mergeManualOverrides(parsedData, period, language, cacheKeyDate);
-                }
-            } catch (e: any) {
-                this.logger.error('Failed to generate/parse daily horoscope JSON from AI: ' + e.message, e.stack);
-            }
-
-            this.dailyHoroscopePromiseCache.delete(inProgressKey);
-            return [];
-        })();
-
-        this.dailyHoroscopePromiseCache.set(inProgressKey, generationPromise);
-        return generationPromise;
+        return this.mergeManualOverrides(defaultData, period, language, cacheKeyDate);
     }
 
     private cleanupPersonalChineseCache() {

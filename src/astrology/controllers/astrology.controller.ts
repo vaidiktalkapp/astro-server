@@ -318,7 +318,8 @@ export class AstrologyController {
             dto.lat,
             dto.lon,
             dto.tzone || 5.5,
-            dto.language || 'English'
+            dto.language || 'English',
+            dto.isDirectory || false
         );
         return { success: true, data: result };
     } catch (error: any) {

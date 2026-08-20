@@ -5,11 +5,15 @@ import { MuhuratCategory, MuhuratCategoryDocument } from '../schemas/muhurat-cat
 import { MuhuratManualDate, MuhuratManualDateDocument } from '../schemas/muhurat-date.schema';
 import { AstronomyService } from '../../ai-astrologers/services/astronomy.service';
 import { AiAstrologyEngineService } from '../../ai-astrologers/services/ai-astrology-engine.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class MuhuratService {
   private readonly logger = new Logger(MuhuratService.name);
   private readonly cache = new Map<string, any>();
+
+  private readonly cacheDir = path.join(process.cwd(), 'data', 'muhurat-cache');
 
   constructor(
     @InjectModel(MuhuratCategory.name) private categoryModel: Model<MuhuratCategoryDocument>,
@@ -18,7 +22,11 @@ export class MuhuratService {
     // Use forwardRef to avoid circular dependency if AiAstrologyEngineService also needs this service
     @Inject(forwardRef(() => AiAstrologyEngineService))
     private readonly aiEngineService: AiAstrologyEngineService,
-  ) {}
+  ) {
+      if (!fs.existsSync(this.cacheDir)) {
+          fs.mkdirSync(this.cacheDir, { recursive: true });
+      }
+  }
 
   /**
    * Main calculation method that merges Manual Overrides (Admin) with Dynamic AI (Python Engine).
@@ -30,12 +38,26 @@ export class MuhuratService {
     lat: number,
     lon: number,
     tzone: number = 5.5,
-    language: string = 'English'
+    language: string = 'English',
+    isDirectory: boolean = false
   ): Promise<any> {
     const cacheKey = `${category}_${startDate}_${endDate}_${lat}_${lon}_${tzone}_${language}`;
+    const cacheFile = path.join(this.cacheDir, `${cacheKey.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`);
+    
     if (this.cache.has(cacheKey)) {
-        this.logger.log(`⚡ Returning cached Muhurat for ${category} (${startDate} to ${endDate})`);
+        this.logger.log(`⚡ Returning memory-cached Muhurat for ${category} (${startDate} to ${endDate})`);
         return this.cache.get(cacheKey);
+    }
+    
+    if (isDirectory && fs.existsSync(cacheFile)) {
+        try {
+            const data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+            this.cache.set(cacheKey, data);
+            this.logger.log(`⚡ Returning file-cached Muhurat for ${category} (${startDate} to ${endDate})`);
+            return data;
+        } catch (e) {
+            this.logger.warn(`Failed to read file cache for ${cacheKey}, recalculating...`);
+        }
     }
 
     try {
@@ -136,6 +158,15 @@ export class MuhuratService {
 
         // Cache the result to make it instant for future loads
         this.cache.set(cacheKey, finalResult);
+        
+        if (isDirectory) {
+            try {
+                fs.writeFileSync(cacheFile, JSON.stringify(finalResult), 'utf8');
+                this.logger.log(`💾 Saved file-cache for Muhurat ${category} (${startDate} to ${endDate})`);
+            } catch (e) {
+                this.logger.error(`Failed to write file cache for ${cacheKey}: ${e.message}`);
+            }
+        }
 
         return finalResult;
 

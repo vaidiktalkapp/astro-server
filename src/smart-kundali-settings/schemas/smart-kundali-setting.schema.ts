@@ -146,6 +146,15 @@ export class SmartKundaliSetting {
 
   @Prop({ default: '' })
   schemaMarkup: string;
+
+  @Prop({ default: '' })
+  extraContent: string;
+
+  @Prop({ default: '' })
+  heroHeading: string;
+
+  @Prop({ default: '' })
+  heroSubheading: string;
 }
 
 export const SmartKundaliSettingSchema = SchemaFactory.createForClass(SmartKundaliSetting);

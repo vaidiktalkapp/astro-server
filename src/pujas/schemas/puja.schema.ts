@@ -80,6 +80,15 @@ export class Puja {
   @Prop({ type: [String], default: [] })
   whyChooseUs: string[];
 
+  @Prop({ default: '' })
+  extraContent: string;
+
+  @Prop({ type: [{ id: String, title: String, desc: String, price: Number, img: String }], default: [] })
+  offerings: { id: string; title: string; desc: string; price: number; img: string }[];
+
+  @Prop({ type: [{ name: String, sub: String, perks: [String], price: Number, orig: Number }], default: [] })
+  packages: { name: string; sub: string; perks: string[]; price: number; orig: number }[];
+
   // SEO Fields
   @Prop({ default: '' })
   seoTitle: string;
