@@ -11,8 +11,18 @@ export class PujaBookingsController {
 
   @Post('create-order')
   createBooking(@Body() createDto: CreatePujaBookingDto, @Req() req: any) {
-    // If you add JwtAuthGuard optionally, req.user will have the userId
-    const userId = req.user?.id || null;
+    console.log('Headers:', req.headers);
+    let userId: string | undefined = undefined;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        if (decoded && decoded.userId) userId = decoded.userId;
+      } catch (e) {
+        console.error('Failed to decode token for puja booking', e);
+      }
+    }
     return this.pujaBookingsService.createBooking(createDto, userId);
   }
 

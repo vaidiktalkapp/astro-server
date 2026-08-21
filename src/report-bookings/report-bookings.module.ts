@@ -5,12 +5,15 @@ import { ReportBookingsService } from './report-bookings.service';
 import { ReportBooking, ReportBookingSchema } from './schemas/report-booking.schema';
 import { PaymentsModule } from '../payments/payments.module';
 
+import { AstrologyModule } from '../astrology/astrology.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: ReportBooking.name, schema: ReportBookingSchema },
     ]),
     PaymentsModule,
+    AstrologyModule,
   ],
   controllers: [ReportBookingsController],
   providers: [ReportBookingsService],

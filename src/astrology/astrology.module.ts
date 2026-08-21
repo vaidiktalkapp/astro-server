@@ -12,8 +12,10 @@ import { AstrologyGuide, AstrologyGuideSchema, PlanetProfile, PlanetProfileSchem
 import { AstrologyContentService } from './services/astrology-content.service';
 import { NumerologyService } from './services/numerology.service';
 import { CompatibilityLogicService } from './services/compatibility-logic.service';
+import { SmartKundliPdfService } from './services/smart-kundli-pdf.service';
 import { CompatibilitySettingsModule } from '../compatibility-settings/compatibility-settings.module';
 import { AdminModule } from '../admin/admin.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
@@ -28,11 +30,12 @@ import { AdminModule } from '../admin/admin.module';
     forwardRef(() => AiAstrologersModule),
     forwardRef(() => AdminModule),
     CompatibilitySettingsModule,
+    UploadModule,
   ],
 
   controllers: [AstrologyController, MuhuratAdminController],
-  providers: [MuhuratService, AstrologyHistoryService, AstrologyContentService, NumerologyService, CompatibilityLogicService],
-  exports: [MuhuratService, AstrologyHistoryService, AstrologyContentService, NumerologyService, CompatibilityLogicService],
+  providers: [MuhuratService, AstrologyHistoryService, AstrologyContentService, NumerologyService, CompatibilityLogicService, SmartKundliPdfService],
+  exports: [MuhuratService, AstrologyHistoryService, AstrologyContentService, NumerologyService, CompatibilityLogicService, SmartKundliPdfService],
 })
 export class AstrologyModule {}
 

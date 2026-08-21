@@ -101,7 +101,14 @@ export class PujaBookingsService {
   async findAll(query: any) {
     const filter: any = {};
     if (query.status) filter.status = query.status;
-    if (query.userId) filter.userId = query.userId;
+    if (query.userId) {
+      const { Types } = require('mongoose');
+      try {
+        filter.userId = new Types.ObjectId(query.userId);
+      } catch (e) {
+        filter.userId = query.userId;
+      }
+    }
 
     return this.pujaBookingModel.find(filter).sort({ createdAt: -1 }).exec();
   }

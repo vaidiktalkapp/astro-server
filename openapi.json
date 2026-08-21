@@ -14502,7 +14502,16 @@
     "/api/v1/report-bookings/create-order": {
       "post": {
         "operationId": "ReportBookingsController_createOrder",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -14537,6 +14546,20 @@
             }
           }
         },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "ReportBookings"
+        ]
+      }
+    },
+    "/api/v1/report-bookings/{bookingId}/generate-pdf": {
+      "post": {
+        "operationId": "ReportBookingsController_generatePdf",
+        "parameters": [],
         "responses": {
           "201": {
             "description": ""

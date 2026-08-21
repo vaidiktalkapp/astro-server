@@ -59,6 +59,15 @@ export class ReportBooking {
   @Prop({ required: true })
   email: string;
 
+  @Prop()
+  chartStyle?: string; // NORTH_INDIAN, SOUTH_INDIAN, EAST_INDIAN
+
+  @Prop()
+  pdfUrl?: string; // S3 URL of the generated PDF
+
+  @Prop()
+  pdfStatus?: string; // pending, generated, failed
+
   @Prop({ required: true })
   amount: number;
 

@@ -5,12 +5,14 @@ import { ReportBooking, ReportBookingDocument } from './schemas/report-booking.s
 import { CreateReportBookingDto } from './dto/create-report-booking.dto';
 import { VerifyReportPaymentDto } from './dto/verify-report-payment.dto';
 import { RazorpayService } from '../payments/services/razorpay.service';
+import { SmartKundliPdfService } from '../astrology/services/smart-kundli-pdf.service';
 
 @Injectable()
 export class ReportBookingsService {
   constructor(
     @InjectModel(ReportBooking.name) private reportBookingModel: Model<ReportBookingDocument>,
     private razorpayService: RazorpayService,
+    private smartKundliPdfService: SmartKundliPdfService,
   ) {}
 
   async createBooking(createDto: CreateReportBookingDto, userId?: string) {
@@ -89,10 +91,59 @@ export class ReportBookingsService {
     };
   }
 
+  async generatePdf(bookingId: string) {
+    const booking = await this.reportBookingModel.findOne({ bookingId });
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.status !== 'paid') {
+      throw new BadRequestException('Cannot generate PDF for unpaid booking');
+    }
+
+    if (booking.pdfStatus === 'generated' && booking.pdfUrl) {
+      return { success: true, pdfUrl: booking.pdfUrl, status: 'already_generated' };
+    }
+
+    booking.pdfStatus = 'generating';
+    await booking.save();
+
+    try {
+      const [year, month, day] = booking.dob.split('-').map(Number);
+      const [hour, min] = booking.tob.split(':').map(Number);
+
+      const pdfUrl = await this.smartKundliPdfService.generatePdf({
+        name: booking.customerName,
+        gender: booking.gender,
+        day,
+        month,
+        year,
+        hour,
+        min,
+        place: booking.pob,
+        language: booking.language || 'en',
+        chart_style: booking.chartStyle || 'NORTH_INDIAN',
+      });
+
+      booking.pdfUrl = pdfUrl;
+      booking.pdfStatus = 'generated';
+      await booking.save();
+
+      return { success: true, pdfUrl, status: 'generated' };
+    } catch (error: any) {
+      booking.pdfStatus = 'failed';
+      await booking.save();
+      throw new BadRequestException(`Failed to generate PDF: ${error.message}`);
+    }
+  }
+
   async findAll(query: any) {
     const filter: any = {};
     if (query.status) filter.status = query.status;
-    if (query.userId) filter.userId = query.userId;
+    if (query.userId) {
+      const Types = require('mongoose').Types;
+      filter.userId = new Types.ObjectId(query.userId);
+    }
     if (query.reportSlug) filter.reportSlug = query.reportSlug;
     return this.reportBookingModel.find(filter).sort({ createdAt: -1 }).exec();
   }

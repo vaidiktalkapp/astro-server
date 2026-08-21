@@ -44,6 +44,10 @@ export class CreateReportBookingDto {
   @IsString()
   language?: string;
 
+  @IsOptional()
+  @IsString()
+  chartStyle?: string;
+
   @IsString()
   @IsNotEmpty()
   phone: string;

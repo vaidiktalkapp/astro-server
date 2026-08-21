@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { SystemSettings, SystemSettingsDocument } from '../payments/schemas/system-settings.schema';
+import { PujaBooking, PujaBookingDocument } from '../puja-bookings/schemas/puja-booking.schema';
 import { OtpService } from './services/otp/otp.service';
 import { TruecallerService } from './services/truecaller.service';
 import { JwtAuthService, TokenPair } from './services/jwt-auth/jwt-auth.service';
@@ -40,6 +41,7 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(SystemSettings.name) private systemSettingsModel: Model<SystemSettingsDocument>,
+    @InjectModel(PujaBooking.name) private pujaBookingModel: Model<PujaBookingDocument>,
     private otpService: OtpService,
     private jwtAuthService: JwtAuthService,
     private truecallerService: TruecallerService,
@@ -55,6 +57,40 @@ export class AuthService {
     }
     this.logger.log(`✅ Currency mapped: ${countryCode} → ${currency}`);
     return currency;
+  }
+
+  /**
+   * Link guest pujas booked with this phone number to the newly authenticated user account
+   */
+  private async linkGuestPujas(userId: any, phoneNumber: string) {
+    try {
+      const phoneDigits = phoneNumber.replace(/\D/g, '');
+      let tenDigits = phoneDigits;
+      if (phoneDigits.length > 10) {
+        tenDigits = phoneDigits.substring(phoneDigits.length - 10);
+      }
+      
+      const result = await this.pujaBookingModel.updateMany(
+        { 
+          $and: [
+            { $or: [{ userId: null }, { userId: { $exists: false } }] },
+            { $or: [
+              { phone: phoneNumber },
+              { phone: phoneDigits },
+              { phone: tenDigits },
+              { phone: `+91${tenDigits}` }
+            ]}
+          ]
+        },
+        { $set: { userId: userId } }
+      );
+      
+      if (result.modifiedCount > 0) {
+        this.logger.log(`🔗 Linked ${result.modifiedCount} guest pujas to user ${userId}`);
+      }
+    } catch (error) {
+      this.logger.error('❌ Failed to link guest pujas:', error);
+    }
   }
 
   /**
@@ -345,6 +381,9 @@ export class AuthService {
         this.logger.log('ℹ️ No device info provided, skipping device management');
       }
 
+      // Link any past guest pujas to this user
+      await this.linkGuestPujas(user._id, user.phoneNumber);
+
       const result = {
         success: true,
         message: restoreMessage || (isNewUser ? 'Registration successful' : 'Login successful'),
@@ -520,6 +559,9 @@ export class AuthService {
       } else {
         this.logger.log('ℹ️ No device info provided, skipping device management');
       }
+
+      // Link any past guest pujas to this user
+      await this.linkGuestPujas(user._id, user.phoneNumber);
 
       this.logger.log('✅ Truecaller authentication successful');
 
