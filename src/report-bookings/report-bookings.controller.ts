@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, UseGuards, Request, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards, Request, Headers, UnauthorizedException } from '@nestjs/common';
 import { ReportBookingsService } from './report-bookings.service';
 import { CreateReportBookingDto } from './dto/create-report-booking.dto';
 import { VerifyReportPaymentDto } from './dto/verify-report-payment.dto';
@@ -15,12 +15,20 @@ export class ReportBookingsController {
       const token = authHeader.split(' ')[1];
       try {
         const decoded: any = jwt.verify(token, process.env.JWT_SECRET || '144ec66a61d35593eb26f29548ddd9ba');
-        userId = decoded.id || decoded._id || undefined;
+        userId = decoded.userId || decoded.id || decoded._id || undefined;
       } catch (err: any) {
         console.error('Invalid token in report booking:', err.message);
+        throw new UnauthorizedException('Session expired. Please log in again.');
       }
     }
-    return this.reportBookingsService.createBooking(createDto, userId);
+    
+    let objectIdUserId: any = undefined;
+    if (userId) {
+      const Types = require('mongoose').Types;
+      objectIdUserId = new Types.ObjectId(userId);
+    }
+    
+    return this.reportBookingsService.createBooking(createDto, objectIdUserId);
   }
 
   @Post('verify-payment')

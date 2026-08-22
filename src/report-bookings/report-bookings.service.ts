@@ -105,25 +105,79 @@ export class ReportBookingsService {
       return { success: true, pdfUrl: booking.pdfUrl, status: 'already_generated' };
     }
 
+    if (booking.pdfStatus === 'generating') {
+      // If the user refreshed the page while it was already generating, 
+      // we wait for a few seconds and check again. 
+      // Alternatively, we can just return a specific status that the frontend can poll.
+      return { success: true, status: 'generating', message: 'PDF is currently being generated in the background. Please wait.' };
+    }
+
     booking.pdfStatus = 'generating';
     await booking.save();
 
     try {
-      const [year, month, day] = booking.dob.split('-').map(Number);
-      const [hour, min] = booking.tob.split(':').map(Number);
+      let pdfUrl: string;
 
-      const pdfUrl = await this.smartKundliPdfService.generatePdf({
-        name: booking.customerName,
-        gender: booking.gender,
-        day,
-        month,
-        year,
-        hour,
-        min,
-        place: booking.pob,
-        language: booking.language || 'en',
-        chart_style: booking.chartStyle || 'NORTH_INDIAN',
-      });
+      if (booking.reportSlug === 'kundali-matching') {
+        const mParts = booking.dob.split('-').map(Number);
+        const mTime = booking.tob.split(':').map(Number);
+        
+        const partner = booking.partnerDetails || {} as any;
+        const fParts = (partner.dob || '2000-01-01').split('-').map(Number);
+        const fTime = (partner.tob || '12:00').split(':').map(Number);
+
+        // Assume primary customer is male, partner is female.
+        // The frontend always sends Boy's details in the primary fields and Girl's in partnerDetails.
+        pdfUrl = await this.smartKundliPdfService.generateMatchMakingPdf({
+          m_name: booking.customerName,
+          m_day: mParts[2],
+          m_month: mParts[1],
+          m_year: mParts[0],
+          m_hour: mTime[0],
+          m_min: mTime[1],
+          m_place: booking.pob,
+          f_name: partner.name || 'Partner',
+          f_day: fParts[2],
+          f_month: fParts[1],
+          f_year: fParts[0],
+          f_hour: fTime[0],
+          f_min: fTime[1],
+          f_place: partner.pob || booking.pob,
+          language: booking.language || 'en',
+          chart_style: booking.chartStyle || 'NORTH_INDIAN',
+        });
+      } else if (booking.reportSlug === 'gemstone-report') {
+        const [year, month, day] = booking.dob.split('-').map(Number);
+        const [hour, min] = booking.tob.split(':').map(Number);
+
+        pdfUrl = await this.smartKundliPdfService.generateGemstonePdf({
+          name: booking.customerName,
+          gender: booking.gender,
+          day,
+          month,
+          year,
+          hour,
+          min,
+          place: booking.pob,
+          language: booking.language || 'en',
+        });
+      } else {
+        const [year, month, day] = booking.dob.split('-').map(Number);
+        const [hour, min] = booking.tob.split(':').map(Number);
+
+        pdfUrl = await this.smartKundliPdfService.generatePdf({
+          name: booking.customerName,
+          gender: booking.gender,
+          day,
+          month,
+          year,
+          hour,
+          min,
+          place: booking.pob,
+          language: booking.language || 'en',
+          chart_style: booking.chartStyle || 'NORTH_INDIAN',
+        });
+      }
 
       booking.pdfUrl = pdfUrl;
       booking.pdfStatus = 'generated';

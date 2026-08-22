@@ -155,6 +155,33 @@ export class SmartKundaliSetting {
 
   @Prop({ default: '' })
   heroSubheading: string;
+
+  @Prop({ type: [String], default: [] })
+  productFeatures: string[];
+
+  @Prop({ type: [String], default: [] })
+  whatItReveals: string[];
+
+  @Prop({ default: '' })
+  productHeading: string;
+
+  @Prop({ default: '' })
+  productDescription: string;
+
+  @Prop({ default: '' })
+  whatItRevealsHeading: string;
+
+  @Prop({ default: '' })
+  highlightsHeading: string;
+
+  @Prop({ default: '' })
+  highlightsSubheading: string;
+
+  @Prop({ type: [String], default: [] })
+  highlightTags: string[];
+
+  @Prop({ type: [String], default: [] })
+  featureCards: string[];
 }
 
 export const SmartKundaliSettingSchema = SchemaFactory.createForClass(SmartKundaliSetting);
