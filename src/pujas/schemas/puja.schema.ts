@@ -26,6 +26,9 @@ export class Puja {
   @Prop()
   image: string;
 
+  @Prop()
+  icon: string;
+
   @Prop({ default: 'active', enum: ['active', 'inactive'] })
   status: string;
 

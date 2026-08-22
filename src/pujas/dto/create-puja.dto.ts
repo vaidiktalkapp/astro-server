@@ -59,6 +59,10 @@ export class CreatePujaDto {
 
   @IsOptional()
   @IsString()
+  icon?: string;
+
+  @IsOptional()
+  @IsString()
   wisdomCardTitle?: string;
 
   @IsOptional()

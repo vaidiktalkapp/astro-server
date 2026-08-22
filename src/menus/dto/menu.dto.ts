@@ -28,6 +28,10 @@ export class CreateMenuDto {
   @IsString()
   @IsOptional()
   badge?: string;
+
+  @IsString()
+  @IsOptional()
+  icon?: string;
 }
 
 export class UpdateMenuDto {
@@ -58,4 +62,8 @@ export class UpdateMenuDto {
   @IsString()
   @IsOptional()
   badge?: string;
+
+  @IsString()
+  @IsOptional()
+  icon?: string;
 }

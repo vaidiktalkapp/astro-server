@@ -26,6 +26,9 @@ export class Menu extends Document {
 
   @Prop()
   badge: string; // 'Free', 'New', etc.
+
+  @Prop()
+  icon: string; // Custom emoji or SVG string
 }
 
 export const MenuSchema = SchemaFactory.createForClass(Menu);
