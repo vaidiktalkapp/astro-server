@@ -25,6 +25,9 @@ export class SmartKundliPdfService {
     language: string;
     chart_style: string;
   }): Promise<string> {
+    // TEMPORARILY DISABLED AS PER REQUEST
+    throw new HttpException('Service is currently unavailable due to high server load. Please try again after some time.', HttpStatus.SERVICE_UNAVAILABLE);
+
     const userId = this.configService.get<string>('ASTROLOGY_API_USER_ID');
     const apiKey = this.configService.get<string>('ASTROLOGY_API_KEY');
 
@@ -146,6 +149,9 @@ export class SmartKundliPdfService {
     language: string;
     chart_style: string;
   }): Promise<string> {
+    // TEMPORARILY DISABLED AS PER REQUEST
+    throw new HttpException('Service is currently unavailable due to high server load. Please try again after some time.', HttpStatus.SERVICE_UNAVAILABLE);
+
     const userId = this.configService.get<string>('ASTROLOGY_API_USER_ID');
     const apiKey = this.configService.get<string>('ASTROLOGY_API_KEY');
 
@@ -270,6 +276,9 @@ harmony, and a renewed sense of purpose.`);
     place: string;
     language: string;
   }): Promise<string> {
+    // TEMPORARILY DISABLED AS PER REQUEST
+    throw new HttpException('Service is currently unavailable due to high server load. Please try again after some time.', HttpStatus.SERVICE_UNAVAILABLE);
+
     const userId = this.configService.get<string>('ASTROLOGY_API_USER_ID');
     const apiKey = this.configService.get<string>('ASTROLOGY_API_KEY');
 

@@ -199,6 +199,6 @@ export class ReportBookingsService {
       filter.userId = new Types.ObjectId(query.userId);
     }
     if (query.reportSlug) filter.reportSlug = query.reportSlug;
-    return this.reportBookingModel.find(filter).sort({ createdAt: -1 }).exec();
+    return this.reportBookingModel.find(filter).populate('userId', 'name phoneNumber email').sort({ createdAt: -1 }).exec();
   }
 }

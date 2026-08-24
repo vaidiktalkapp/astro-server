@@ -104,6 +104,19 @@ export class Puja {
 
   @Prop({ default: '' })
   schemaMarkup: string;
+
+  // Landing Page Specific Fields
+  @Prop({ default: '' })
+  landingHeading1: string;
+
+  @Prop({ default: '' })
+  landingHeading2: string;
+
+  @Prop({ default: '' })
+  landingHeading3: string;
+
+  @Prop({ default: '' })
+  landingDesc: string;
 }
 
 export const PujaSchema = SchemaFactory.createForClass(Puja);
