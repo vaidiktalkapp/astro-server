@@ -182,6 +182,21 @@ export class SmartKundaliSetting {
 
   @Prop({ type: [String], default: [] })
   featureCards: string[];
+
+  @Prop({ default: '' })
+  heroCtaText: string;
+
+  @Prop({ default: '' })
+  imageSectionCtaText: string;
+
+  @Prop({ default: '' })
+  videoSectionCtaText: string;
+
+  @Prop({ default: '' })
+  bottomCtaText: string;
+
+  @Prop({ default: '' })
+  stickyCtaText: string;
 }
 
 export const SmartKundaliSettingSchema = SchemaFactory.createForClass(SmartKundaliSetting);

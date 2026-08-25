@@ -62,6 +62,7 @@ import { SeoSettingsModule } from './seo-settings/seo-settings.module';
 import { SubscribersModule } from './subscribers/subscribers.module';
 import { PageSeoSettingsModule } from './page-seo-settings/page-seo-settings.module';
 import { MenusModule } from './menus/menus.module';
+import { ContactInquiriesModule } from './contact-inquiries/contact-inquiries.module';
 
 @Module({
   imports: [
@@ -173,6 +174,7 @@ import { MenusModule } from './menus/menus.module';
     SubscribersModule,
     PageSeoSettingsModule,
     MenusModule,
+    ContactInquiriesModule,
   ],
   controllers: [AppController],
   providers: [
