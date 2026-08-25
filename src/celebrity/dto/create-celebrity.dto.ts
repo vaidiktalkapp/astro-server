@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean, IsArray } from 'class-validator';
 
 export class CreateCelebrityDto {
   @IsString()
@@ -13,9 +13,10 @@ export class CreateCelebrityDto {
   @IsOptional()
   image?: string;
 
-  @IsString()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  category?: string;
+  category?: string[];
 
   @IsString()
   @IsNotEmpty()

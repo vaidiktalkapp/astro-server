@@ -14,8 +14,8 @@ export class Celebrity {
   @Prop()
   image: string;
 
-  @Prop()
-  category: string; // e.g. Bollywood, Sports, Politics
+  @Prop({ type: [String], default: [] })
+  category: string[]; // e.g. Bollywood, Sports, Politics
 
   @Prop({ required: true })
   birthDate: string; // YYYY-MM-DD
