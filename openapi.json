@@ -14870,6 +14870,89 @@
           "Menus"
         ]
       }
+    },
+    "/api/v1/contact-us": {
+      "post": {
+        "operationId": "ContactInquiriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactInquiryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Submit a new contact inquiry",
+        "tags": [
+          "Contact Inquiries"
+        ]
+      }
+    },
+    "/api/v1/admin/contact-us": {
+      "get": {
+        "operationId": "AdminContactInquiriesController_findAll",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all contact inquiries",
+        "tags": [
+          "Admin Contact Inquiries"
+        ]
+      }
+    },
+    "/api/v1/admin/contact-us/{id}/status": {
+      "patch": {
+        "operationId": "AdminContactInquiriesController_updateStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update inquiry status",
+        "tags": [
+          "Admin Contact Inquiries"
+        ]
+      }
     }
   },
   "info": {
@@ -15453,6 +15536,33 @@
       "UpdateMenuDto": {
         "type": "object",
         "properties": {}
+      },
+      "CreateContactInquiryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "example": "john@example.com"
+          },
+          "subject": {
+            "type": "string",
+            "example": "Question about Puja"
+          },
+          "message": {
+            "type": "string",
+            "example": "I would like to know the charges for Griha Pravesh puja."
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "subject",
+          "message"
+        ]
       }
     }
   }
