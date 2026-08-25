@@ -65,7 +65,7 @@ export class AdminOrdersService {
         .find(query)
         .populate('userId', 'name phoneNumber profileImage wallet')
         .populate('astrologerId', 'name phoneNumber profilePicture')
-        .sort({ createdAt: -1 })
+        .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),

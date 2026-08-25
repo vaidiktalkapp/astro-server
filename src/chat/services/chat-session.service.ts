@@ -18,6 +18,7 @@ import { UserBlockingService } from 'src/users/services/user-blocking.service';
 import { AvailabilityService } from '../../astrologers/services/availability.service';
 import { SystemSettings, SystemSettingsDocument } from '../../payments/schemas/system-settings.schema';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ChatMessageService } from './chat-message.service';
 
 @Injectable()
 export class ChatSessionService {
@@ -42,6 +43,7 @@ export class ChatSessionService {
     private blockingService: AstrologerBlockingService,
     private userBlockingService: UserBlockingService,
     private availabilityService: AvailabilityService,
+    @Inject(forwardRef(() => ChatMessageService)) private chatMessageService: ChatMessageService,
   ) { }
 
   private generateSessionId(): string {
@@ -659,6 +661,14 @@ export class ChatSessionService {
       // Cap to max duration to prevent overcharging (even if ended manually after timeout)
       if (actualDurationSeconds > session.maxDurationSeconds) {
         actualDurationSeconds = session.maxDurationSeconds;
+      }
+
+      // ✅ AUTOMATIC REFUND CHECK: Did the astrologer ever reply?
+      const astrologerReplied = await this.chatMessageService.hasAstrologerReplied(sessionId, session.astrologerId.toString());
+      if (!astrologerReplied && actualDurationSeconds > 0) {
+        this.logger.warn(`⚠️ Session ${sessionId} ended but Astrologer sent 0 messages. Cancelling charges to protect user.`);
+        actualDurationSeconds = 0;
+        reason = reason === 'user_ended' ? 'astrologer_no_response' : reason;
       }
 
       session.duration = actualDurationSeconds;

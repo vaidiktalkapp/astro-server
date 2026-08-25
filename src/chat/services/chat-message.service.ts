@@ -605,4 +605,19 @@ export class ChatMessageService {
       }
     };
   }
+
+  async hasAstrologerReplied(sessionId: string, astrologerId: string): Promise<boolean> {
+    let sessionIdQuery: any;
+    try {
+      sessionIdQuery = this.toObjectId(sessionId);
+    } catch {
+      sessionIdQuery = sessionId;
+    }
+
+    const count = await this.messageModel.countDocuments({
+      sessionId: sessionIdQuery,
+      senderId: this.toObjectId(astrologerId)
+    });
+    return count > 0;
+  }
 }
