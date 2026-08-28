@@ -161,6 +161,22 @@ export class ReportBookingsService {
           place: booking.pob,
           language: booking.language || 'en',
         });
+      } else if (booking.reportSlug === 'fortune-numerology') {
+        const [year, month, day] = booking.dob.split('-').map(Number);
+        const [hour, min] = booking.tob.split(':').map(Number);
+
+        pdfUrl = await this.smartKundliPdfService.generateNumerologyPdf({
+          name: booking.customerName,
+          gender: booking.gender,
+          day,
+          month,
+          year,
+          hour,
+          min,
+          place: booking.pob,
+          language: booking.language || 'en',
+          chart_style: booking.chartStyle || 'NORTH_INDIAN',
+        });
       } else {
         const [year, month, day] = booking.dob.split('-').map(Number);
         const [hour, min] = booking.tob.split(':').map(Number);
