@@ -15114,6 +15114,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "totalMinutes": {
+            "type": "number",
+            "description": "Chat Minutes override"
+          },
+          "totalOrders": {
+            "type": "number",
+            "description": "Call Minutes (Orders) override"
           }
         }
       },

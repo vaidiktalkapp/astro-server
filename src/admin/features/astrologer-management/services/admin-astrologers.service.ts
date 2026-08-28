@@ -427,6 +427,16 @@ export class AdminAstrologersService {
     if (updateData.languages !== undefined) astrologer.languages = updateData.languages;
     if (updateData.specializations !== undefined) astrologer.specializations = updateData.specializations;
     if (updateData.dateOfBirth !== undefined) astrologer.dateOfBirth = new Date(updateData.dateOfBirth);
+    if (updateData.totalMinutes !== undefined) {
+      if (!astrologer.stats) astrologer.stats = {} as any;
+      astrologer.stats.totalMinutes = updateData.totalMinutes;
+      astrologer.stats.chatMinutes = updateData.totalMinutes; // Sync chatMinutes to bypass legacy split logic
+    }
+    if (updateData.totalOrders !== undefined) {
+      if (!astrologer.stats) astrologer.stats = {} as any;
+      astrologer.stats.totalOrders = updateData.totalOrders;
+      astrologer.stats.callMinutes = updateData.totalOrders; // Sync callMinutes for mobile app compatibility
+    }
 
     await astrologer.save();
 

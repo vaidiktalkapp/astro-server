@@ -43,4 +43,14 @@ export class UpdateAstrologerProfileDto {
   @ArrayMaxSize(15)
   @IsString({ each: true })
   specializations?: string[];
+
+  @ApiPropertyOptional({ description: 'Chat Minutes override' })
+  @IsOptional()
+  @IsNumber()
+  totalMinutes?: number;
+
+  @ApiPropertyOptional({ description: 'Call Minutes (Orders) override' })
+  @IsOptional()
+  @IsNumber()
+  totalOrders?: number;
 }

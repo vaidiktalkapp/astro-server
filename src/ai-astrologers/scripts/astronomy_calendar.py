@@ -184,11 +184,13 @@ def jd_to_ist_str(jd_ut, tzone):
     except:
         return f"{hh:02d}:{mm:02d}"
 
-def find_end_time(jd_start, calc_type="tithi"):
+def find_end_time(jd_start, lat, lon, calc_type="tithi"):
     swe.set_sid_mode(swe.SIDM_LAHIRI)
     def get_val(jd):
-        sun_p = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]
-        moon_p = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]
+        swe.set_topo(lon, lat, 0.0)
+        sun_p = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0][0]
+        swe.set_topo(lon, lat, 0.0)
+        moon_p = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0][0]
         if calc_type == "tithi":
             return int(((moon_p - sun_p + 360) % 360) / 12)
         elif calc_type == "nakshatra":
@@ -218,11 +220,13 @@ def find_end_time(jd_start, calc_type="tithi"):
             high = mid
     return high
 
-def find_start_time(jd_end, calc_type="tithi"):
+def find_start_time(jd_end, lat, lon, calc_type="tithi"):
     swe.set_sid_mode(swe.SIDM_LAHIRI)
     def get_val(jd):
-        sun_p = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]
-        moon_p = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]
+        swe.set_topo(lon, lat, 0.0)
+        sun_p = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0][0]
+        swe.set_topo(lon, lat, 0.0)
+        moon_p = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0][0]
         if calc_type == "tithi":
             return int(((moon_p - sun_p + 360) % 360) / 12)
         elif calc_type == "nakshatra":
@@ -290,9 +294,11 @@ def get_panchang_minimal(jd, lat, lon, tzone):
     Skips binary searches for end times and skipped planets.
     """
     swe.set_sid_mode(swe.SIDM_LAHIRI)
-    sun_pos = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0]
+    swe.set_topo(lon, lat, 0.0)
+    sun_pos = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0]
     sun_lon = sun_pos[0] % 360
-    moon_pos = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0]
+    swe.set_topo(lon, lat, 0.0)
+    moon_pos = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0]
     moon_lon = moon_pos[0] % 360
     
     diff = (moon_lon - sun_lon + 360) % 360
@@ -330,9 +336,11 @@ def get_panchang_minimal(jd, lat, lon, tzone):
 
 def get_panchang_for_jd(jd, lat, lon, tzone, detailed=False):
     swe.set_sid_mode(swe.SIDM_LAHIRI)
-    sun_pos = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0]
+    swe.set_topo(lon, lat, 0.0)
+    sun_pos = swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0]
     sun_lon = sun_pos[0] % 360
-    moon_pos = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0]
+    swe.set_topo(lon, lat, 0.0)
+    moon_pos = swe.calc_ut(jd, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0]
     moon_lon = moon_pos[0] % 360
     diff = (moon_lon - sun_lon + 360) % 360
     tithi_val = diff / 12
@@ -341,8 +349,8 @@ def get_panchang_for_jd(jd, lat, lon, tzone, detailed=False):
     paksha = "Shukla" if tithi_index < 15 else "Krishna"
     nak_index = int(moon_lon / (360/27))
     nak_name = NAKSHATRAS[nak_index % 27]
-    tithi_end_jd = find_end_time(jd, "tithi")
-    nak_end_jd = find_end_time(jd, "nakshatra")
+    tithi_end_jd = find_end_time(jd, lat, lon, "tithi")
+    nak_end_jd = find_end_time(jd, lat, lon, "nakshatra")
     yoga = get_yoga(sun_lon, moon_lon)
     karana = get_karana(tithi_val)
     sun_sign = ZODIAC_SIGNS[int(sun_lon / 30) % 12]
@@ -372,7 +380,8 @@ def get_panchang_for_jd(jd, lat, lon, tzone, detailed=False):
         muhurats["rahu_kaal"] = f"{jd_to_ist_str(rahu_start_jd, tzone)} - {jd_to_ist_str(rahu_end_jd, tzone)}"
     planets = {}
     for name, pid in PLANET_IDS.items():
-        p_pos = swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0]
+        swe.set_topo(lon, lat, 0.0)
+        p_pos = swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0]
         planets[name] = p_pos[0] % 360
     vara_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     y, m, d, h = swe.revjul(jd)
@@ -401,24 +410,26 @@ def get_panchang_for_jd(jd, lat, lon, tzone, detailed=False):
         "is_kharmas": (int(sun_lon / 30) % 12) in [8, 11],
         "is_venus_combust": min(abs(sun_lon - planets.get("Venus", 0)), 360 - abs(sun_lon - planets.get("Venus", 0))) < 10,
         "is_jupiter_combust": min(abs(sun_lon - planets.get("Jupiter", 0)), 360 - abs(sun_lon - planets.get("Jupiter", 0))) < 11,
-        "is_sankranti": int(sun_lon / 30) != int((swe.calc_ut(jd - 1.0, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) / 30)
+        "is_sankranti": int(sun_lon / 30) != int((swe.calc_ut(jd - 1.0, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0][0]) / 30)
     }
 
     # If detailed mode (for Today Panchang), add yoga_end and karana details
     if detailed:
-        yoga_end_jd = find_end_time(jd, "yoga")
+        yoga_end_jd = find_end_time(jd, lat, lon, "yoga")
         result["yoga_end"] = jd_to_ist_str(yoga_end_jd, tzone)
 
-        karana_end_jd = find_end_time(jd, "karana")
+        karana_end_jd = find_end_time(jd, lat, lon, "karana")
         karana1_name = karana
         karana1_end = jd_to_ist_str(karana_end_jd, tzone)
         # Second karana of the day
         jd2 = karana_end_jd + 0.001
-        sun_p2 = swe.calc_ut(jd2, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]
-        moon_p2 = swe.calc_ut(jd2, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]
+        swe.set_topo(lon, lat, 0.0)
+        sun_p2 = swe.calc_ut(jd2, swe.SUN, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0][0]
+        swe.set_topo(lon, lat, 0.0)
+        moon_p2 = swe.calc_ut(jd2, swe.MOON, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_TOPOCTR)[0][0]
         diff2 = (moon_p2 - sun_p2 + 360) % 360
         karana2_name = get_karana(diff2 / 12)
-        karana2_end_jd = find_end_time(jd2, "karana")
+        karana2_end_jd = find_end_time(jd2, lat, lon, "karana")
         karana2_end = jd_to_ist_str(karana2_end_jd, tzone)
         result["karana_details"] = [
             {"name": karana1_name, "end": karana1_end},

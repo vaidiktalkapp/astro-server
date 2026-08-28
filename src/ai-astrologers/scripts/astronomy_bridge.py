@@ -332,7 +332,8 @@ def calculate_kundli(data):
         planets["Ascendant"] = _planet_entry("Ascendant", [asc_lon, 0, 0, 0], cusps, asc_lon)
 
         for name, id_attr in PLANET_IDS.items():
-            pos = swe.calc_ut(jd, getattr(swe, id_attr), swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED)
+            swe.set_topo(lon, lat, 0.0)
+            pos = swe.calc_ut(jd, getattr(swe, id_attr), swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED | swe.FLG_TOPOCTR)
             planets[name] = _planet_entry(name, pos, cusps, asc_lon)
 
         # Rahu is typically retrograde in Mean Node calc, but we mark as False for tradition
