@@ -55,6 +55,7 @@ export class AdminAstrologersController {
       isProfileComplete: queryDto.isProfileComplete,
       startDate: queryDto.startDate ? new Date(queryDto.startDate) : undefined,
       endDate: queryDto.endDate ? new Date(queryDto.endDate) : undefined,
+      walletBalance: queryDto.walletBalance,
     };
 
     return this.adminAstrologersService.getAllAstrologers(page, limit, filters);

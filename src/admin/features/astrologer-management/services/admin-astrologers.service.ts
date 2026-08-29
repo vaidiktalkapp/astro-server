@@ -59,11 +59,25 @@ export class AdminAstrologersService {
       if (filters.endDate) query.createdAt.$lte = filters.endDate;
     }
 
+    let sortQuery: any = { displayOrder: 1, createdAt: -1 };
+
+    if (filters?.walletBalance) {
+      if (filters.walletBalance === 'has_balance') {
+        query['earnings.withdrawableAmount'] = { $gt: 0 };
+      } else if (filters.walletBalance === 'zero_balance') {
+        query['earnings.withdrawableAmount'] = { $lte: 0 };
+      } else if (filters.walletBalance === 'high_to_low') {
+        sortQuery = { 'earnings.withdrawableAmount': -1, createdAt: -1 };
+      } else if (filters.walletBalance === 'low_to_high') {
+        sortQuery = { 'earnings.withdrawableAmount': 1, createdAt: -1 };
+      }
+    }
+
     const [astrologers, total] = await Promise.all([
       this.astrologerModel
         .find(query)
         .populate('registrationId')
-        .sort({ displayOrder: 1, createdAt: -1 })
+        .sort(sortQuery)
         .skip(skip)
         .limit(limit)
         .lean(),

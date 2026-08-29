@@ -245,11 +245,14 @@ Respond with ONLY the JSON object. No preamble.`,
     }
 
     private async mergeManualOverrides(aiData: any[], period: string, language: string, cacheKeyDate: string): Promise<any[]> {
+        let p = period.toLowerCase();
+        
+        // We remove dateIdentifier match to ensure old data remains until overwritten.
+        // We sort by createdAt: -1 so the most recently added entry is used.
         const overrides = await this.manualHoroscopeModel.find({
-            period: period.toLowerCase(),
-            language: language.toLowerCase(),
-            dateIdentifier: cacheKeyDate
-        }).exec();
+            period: p,
+            language: language.toLowerCase()
+        }).sort({ createdAt: -1 }).exec();
 
         if (!overrides || overrides.length === 0) {
             return aiData;
@@ -257,7 +260,10 @@ Respond with ONLY the JSON object. No preamble.`,
 
         const overrideMap = new Map();
         for (const o of overrides) {
-            overrideMap.set(o.sign.toLowerCase(), o.readingData);
+            // Since it's sorted descending, the first encountered is the latest for that sign
+            if (!overrideMap.has(o.sign.toLowerCase())) {
+                overrideMap.set(o.sign.toLowerCase(), o.readingData);
+            }
         }
 
         return aiData.map(aiSignData => {

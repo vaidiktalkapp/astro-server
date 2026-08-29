@@ -6,4 +6,5 @@ export interface AstrologerFilter {
   isProfileComplete?: boolean;
   startDate?: Date;
   endDate?: Date;
+  walletBalance?: string;
 }

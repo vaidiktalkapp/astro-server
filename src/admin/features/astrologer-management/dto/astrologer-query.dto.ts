@@ -33,4 +33,8 @@ export class AstrologerQueryDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @IsOptional()
+  @IsString()
+  walletBalance?: string;
 }

@@ -70,35 +70,19 @@ export class HoroscopeService {
       
       let query: any = {
         sign: sign.toLowerCase(),
-        period: p,
         isActive: true
       };
 
-      if (p === 'weekly') {
-        // Find the most recent weekly entry that is NOT older than 7 days from the requested date
-        // AND its targetDate is <= the requested date
-        query.targetDate = { $lte: date };
-        const entries = await this.horoscopeModel.find(query).sort({ targetDate: -1 }).limit(1).exec();
-        const entry = entries[0];
-        
-        if (!entry) return null;
-
-        // Check if it's within 7 days
-        const entryTs = new Date(entry.targetDate).getTime();
-        const requestedTs = new Date(date).getTime();
-        const diffDays = (requestedTs - entryTs) / (1000 * 3600 * 24);
-        
-        if (diffDays >= 0 && diffDays < 7) {
-          return this.mapEntryToResponse(entry);
-        }
-        return null;
+      if (p === 'daily' || p === 'tomorrow') {
+        query.period = { $in: ['daily', 'tomorrow'] };
+      } else {
+        query.period = p;
       }
 
-      // For Daily and Tomorrow, use exact date match
-      const entry = await this.horoscopeModel.findOne({
-        ...query,
-        targetDate: date
-      }).exec();
+      // Always return the most recently updated entry for this period and sign.
+      // This ensures the website is never empty, even if the admin hasn't added a new one for today.
+      const entries = await this.horoscopeModel.find(query).sort({ targetDate: -1 }).limit(1).exec();
+      const entry = entries[0];
 
       if (!entry) return null;
       return this.mapEntryToResponse(entry);
