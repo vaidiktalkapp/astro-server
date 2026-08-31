@@ -29,6 +29,7 @@ import { GeminiVoiceService } from '../../ai-voice/services/gemini-voice.service
       'https://vaidiktalkweb.vercel.app',
       'https://admin.vaidiktalk.com',
       'https://app.vaidiktalk.com',
+      'https://vaidiktalk.com',
       'https://web-vaidik-git-test-server-vadik-talks-projects.vercel.app',
       'https://vaidik-admin-git-test-server-vadik-talks-projects.vercel.app',
       'https://web-vaidik-main.vercel.app',

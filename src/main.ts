@@ -26,6 +26,7 @@ async function bootstrap() {
       'http://3.109.60.127:3003',
       'https://admin.vaidiktalk.com',
       'https://app.vaidiktalk.com',
+      'https://vaidiktalk.com',
       'https://vaidiktalk-ai-2-1a2t.vercel.app',
       'https://vaidiktalk-ai-2.vercel.app',
       'https://vaidik-mu.vercel.app',
