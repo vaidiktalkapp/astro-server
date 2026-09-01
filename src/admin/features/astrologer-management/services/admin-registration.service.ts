@@ -525,4 +525,36 @@ export class AdminRegistrationService {
       }
     };
   }
+
+  /**
+   * Delete registration
+   */
+  async deleteRegistration(registrationId: string, adminId: string): Promise<any> {
+    const registration = await this.registrationModel.findById(registrationId);
+
+    if (!registration) {
+      throw new NotFoundException('Registration not found');
+    }
+
+    await this.registrationModel.findByIdAndDelete(registrationId);
+
+    await this.activityLogService.log({
+      adminId,
+      action: 'registration.deleted',
+      module: 'registrations',
+      targetId: registrationId,
+      targetType: 'Registration',
+      status: 'success',
+      details: {
+        candidateName: registration.name,
+      }
+    });
+
+    this.logger.log(`Registration ${registrationId} permanently deleted by admin ${adminId}`);
+
+    return {
+      success: true,
+      message: 'Registration permanently deleted',
+    };
+  }
 }

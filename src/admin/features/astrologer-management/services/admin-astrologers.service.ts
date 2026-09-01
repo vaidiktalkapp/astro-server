@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
 import { Astrologer, AstrologerDocument } from '../../../../astrologers/schemas/astrologer.schema';
+import { Registration, RegistrationDocument } from '../../../../registration/schemas/registration.schema';
 import { Order, OrderDocument } from '../../../../orders/schemas/orders.schema';
 import { NotificationService } from '../../../../notifications/services/notification.service';
 import { AdminActivityLogService } from '../../activity-logs/services/admin-activity-log.service';
@@ -18,6 +19,7 @@ export class AdminAstrologersService {
   constructor(
     @InjectModel(Astrologer.name) private astrologerModel: Model<AstrologerDocument>,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
+    @InjectModel(Registration.name) private registrationModel: Model<RegistrationDocument>,
     private notificationService: NotificationService,
     private activityLogService: AdminActivityLogService,
   ) { }

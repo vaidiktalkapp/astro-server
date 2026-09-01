@@ -11,6 +11,7 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
   ValidationPipe,
+  Delete
 } from '@nestjs/common';
 
 import { AdminAuthGuard } from '../../../core/guards/admin-auth.guard';
@@ -131,6 +132,22 @@ export class AdminRegistrationController {
       admin._id,
       rejectDto.reason,
       rejectDto.canReapply,
+    );
+  }
+
+  /**
+   * DELETE /admin/registrations/:registrationId
+   * Delete registration
+   */
+  @Delete(':registrationId')
+  @RequirePermissions(Permissions.ASTROLOGERS_DELETE)
+  async deleteRegistration(
+    @Param('registrationId') registrationId: string,
+    @CurrentAdmin() admin: any,
+  ) {
+    return this.adminRegistrationService.deleteRegistration(
+      registrationId,
+      admin._id,
     );
   }
 }
