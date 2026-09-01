@@ -5867,6 +5867,27 @@
         "tags": [
           "AdminRegistration"
         ]
+      },
+      "delete": {
+        "operationId": "AdminRegistrationController_deleteRegistration",
+        "parameters": [
+          {
+            "name": "registrationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "AdminRegistration"
+        ]
       }
     },
     "/api/v1/admin/registrations/{registrationId}/shortlist": {

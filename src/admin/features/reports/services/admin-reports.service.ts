@@ -57,7 +57,7 @@ export class AdminReportsService {
     const revenueData = await this.orderModel.aggregate([
       {
         $match: {
-          status: this.getStatusRegex('completed'),
+          status: { $in: [/^completed$/i, /^active$/i] },
           createdAt: { $gte: start, $lte: end },
         },
       },
@@ -153,7 +153,7 @@ export class AdminReportsService {
     const performanceData = await this.orderModel.aggregate([
       {
         $match: {
-          status: this.getStatusRegex('completed'),
+          status: { $in: [/^completed$/i, /^active$/i] },
           createdAt: { $gte: start, $lte: end },
           astrologerId: { $nin: excludedAstrologerIds }
         },
@@ -212,14 +212,14 @@ export class AdminReportsService {
       // 1. Total
       this.orderModel.countDocuments({ createdAt: { $gte: start, $lte: end }, ...excludeFilter }),
       // 2. Completed (Case Insensitive)
-      this.orderModel.countDocuments({ status: this.getStatusRegex('completed'), createdAt: { $gte: start, $lte: end }, ...excludeFilter }),
+      this.orderModel.countDocuments({ status: { $in: [/^completed$/i, /^active$/i] }, createdAt: { $gte: start, $lte: end }, ...excludeFilter }),
       // 3. Cancelled (Case Insensitive)
       this.orderModel.countDocuments({ status: this.getStatusRegex('cancelled'), createdAt: { $gte: start, $lte: end }, ...excludeFilter }),
       // 4. Pending (Case Insensitive)
       this.orderModel.countDocuments({ status: this.getStatusRegex('pending'), createdAt: { $gte: start, $lte: end }, ...excludeFilter }),
       // 5. Total Revenue Aggregation
       this.orderModel.aggregate([
-        { $match: { status: this.getStatusRegex('completed'), createdAt: { $gte: start, $lte: end }, ...excludeFilter } },
+        { $match: { status: { $in: [/^completed$/i, /^active$/i] }, createdAt: { $gte: start, $lte: end }, ...excludeFilter } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
       // 6. Type Breakdown

@@ -218,14 +218,14 @@ export class AdminAstrologersService {
       this.orderModel.countDocuments({ astrologerId: astrologerObjectId }),
       this.orderModel.countDocuments({
         astrologerId: astrologerObjectId,
-        status: 'completed',
+        status: { $in: ['completed', 'active'] },
       }),
       this.orderModel.aggregate([
-        { $match: { astrologerId: astrologerObjectId, status: 'completed' } },
+        { $match: { astrologerId: astrologerObjectId, status: { $in: ['completed', 'active'] } } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
       this.orderModel.aggregate([
-        { $match: { astrologerId: astrologerObjectId, status: 'completed', 'rating.rating': { $exists: true } } },
+        { $match: { astrologerId: astrologerObjectId, status: { $in: ['completed', 'active'] }, 'rating.rating': { $exists: true } } },
         { $group: { _id: null, avg: { $avg: '$rating.rating' } } },
       ]),
       this.orderModel
