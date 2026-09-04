@@ -12,11 +12,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { UploadService } from '../services/upload.service';
 import { FileValidationPipe } from '../pipes/file-validation.pipe';
 
 @Controller('upload')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminGuard)
 export class UploadController {
   constructor(private uploadService: UploadService) {}
 

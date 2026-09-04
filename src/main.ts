@@ -89,8 +89,9 @@ async function bootstrap() {
 
       const authHeader = req.headers.authorization;
 
-      // Basic Auth: admin / Vaidik@123
-      if (authHeader && authHeader === 'Basic YWRtaW46VmFpZGlrQDEyMw==') {
+      // Basic Auth: Checks process.env.SWAGGER_BASIC_AUTH_TOKEN
+      const expectedAuth = process.env.SWAGGER_BASIC_AUTH_TOKEN || 'Basic YWRtaW46VmFpZGlrQDEyMw==';
+      if (authHeader && authHeader === expectedAuth) {
         return next();
       }
 
