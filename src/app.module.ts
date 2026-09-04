@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-store';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -67,6 +68,10 @@ import { ContactInquiriesModule } from './contact-inquiries/contact-inquiries.mo
 @Module({
   imports: [
     // Global configuration
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,

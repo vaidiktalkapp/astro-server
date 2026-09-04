@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus 
 } from '@nestjs/common';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 import { AdminAuthService } from '../services/admin-auth.service';
 import { AdminAuthGuard } from '../../../core/guards/admin-auth.guard';
@@ -33,6 +34,8 @@ export class AdminAuthController {
    */
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   async login(
     @Body(ValidationPipe) loginDto: AdminLoginDto,
     @Req() req: any
