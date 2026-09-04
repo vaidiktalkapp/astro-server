@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, Patch, UseGuards } from '@nestjs/common';
 import { BlogsService } from './blogs.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Controller('blogs')
 export class BlogsController {
@@ -7,6 +9,7 @@ export class BlogsController {
 
   // ================= CATEGORIES =================
   @Post('categories')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   createCategory(@Body() data: any) {
     return this.blogsService.createCategory(data);
   }
@@ -17,17 +20,20 @@ export class BlogsController {
   }
 
   @Put('categories/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   updateCategory(@Param('id') id: string, @Body() data: any) {
     return this.blogsService.updateCategory(id, data);
   }
 
   @Delete('categories/:id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   deleteCategory(@Param('id') id: string) {
     return this.blogsService.deleteCategory(id);
   }
 
   // ================= BLOGS =================
   @Post()
+  @UseGuards(JwtAuthGuard, AdminGuard)
   createBlog(@Body() data: any) {
     return this.blogsService.createBlog(data);
   }
@@ -50,11 +56,13 @@ export class BlogsController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   updateBlog(@Param('id') id: string, @Body() data: any) {
     return this.blogsService.updateBlog(id, data);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
   deleteBlog(@Param('id') id: string) {
     return this.blogsService.deleteBlog(id);
   }

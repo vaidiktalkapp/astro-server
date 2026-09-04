@@ -1,5 +1,7 @@
-import { Controller, Get, Put, Body } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { HeroSettingsService } from './hero-settings.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Controller('hero-settings')
 export class HeroSettingsController {
@@ -11,6 +13,7 @@ export class HeroSettingsController {
   }
 
   @Put()
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async updateSettings(@Body() updateData: any) {
     return this.heroSettingsService.updateSettings(updateData);
   }
