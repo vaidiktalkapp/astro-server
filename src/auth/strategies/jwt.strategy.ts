@@ -9,6 +9,8 @@ import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Astrologer, AstrologerDocument } from '../../astrologers/schemas/astrologer.schema';
 import { SimpleCacheService } from '../services/cache/cache.service';
 
+import * as jwt from 'jsonwebtoken';
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name);
@@ -20,7 +22,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
   ) {
     const jwtSecret = configService.get<string>('JWT_SECRET');
-    
+    const adminJwtSecret = configService.get<string>('ADMIN_JWT_SECRET') || 'fby34f82y34bfuibetheryjh5h6554u';
+
     if (!jwtSecret) {
       throw new Error('❌ JWT_SECRET is not defined in environment variables');
     }
@@ -28,7 +31,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtSecret,
+      secretOrKeyProvider: (request: any, rawJwtToken: string, done: any) => {
+        try {
+          const decoded: any = jwt.decode(rawJwtToken);
+          if (decoded && (decoded.isAdmin === true || decoded.isSuperAdmin === true || decoded.roleType)) {
+            return done(null, adminJwtSecret);
+          }
+          return done(null, jwtSecret);
+        } catch {
+          return done(null, jwtSecret);
+        }
+      },
     });
 
     this.logger.log('🔑 JWT Strategy initialized');
