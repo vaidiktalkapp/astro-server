@@ -25,8 +25,6 @@ export class SmartKundliPdfService {
     language: string;
     chart_style: string;
   }): Promise<string> {
-    // TEMPORARILY DISABLED AS PER REQUEST
-    throw new HttpException('Service is currently unavailable due to high server load. Please try again after some time.', HttpStatus.SERVICE_UNAVAILABLE);
 
     const userId = this.configService.get<string>('ASTROLOGY_API_USER_ID');
     const apiKey = this.configService.get<string>('ASTROLOGY_API_KEY');
@@ -94,12 +92,12 @@ export class SmartKundliPdfService {
         }
       );
 
-      if (!pdfResponse.data || !pdfResponse.data.status || !pdfResponse.data.pdf_url) {
+      const tempPdfUrl = pdfResponse.data?.pdf_url || pdfResponse.data?.response?.pdf_url;
+
+      if (!pdfResponse.data || !pdfResponse.data.status || !tempPdfUrl) {
         this.logger.error(`AstrologyAPI PDF Error: ${JSON.stringify(pdfResponse.data)}`);
         throw new HttpException('Failed to generate PDF from provider', HttpStatus.INTERNAL_SERVER_ERROR);
       }
-
-      const tempPdfUrl = pdfResponse.data.pdf_url;
       this.logger.log(`PDF Generated successfully at temporary URL: ${tempPdfUrl}`);
 
       // 4. Download PDF and upload to S3
@@ -149,8 +147,6 @@ export class SmartKundliPdfService {
     language: string;
     chart_style: string;
   }): Promise<string> {
-    // TEMPORARILY DISABLED AS PER REQUEST
-    throw new HttpException('Service is currently unavailable due to high server load. Please try again after some time.', HttpStatus.SERVICE_UNAVAILABLE);
 
     const userId = this.configService.get<string>('ASTROLOGY_API_USER_ID');
     const apiKey = this.configService.get<string>('ASTROLOGY_API_KEY');
@@ -238,12 +234,12 @@ harmony, and a renewed sense of purpose.`);
         timeout: 90000 
       });
 
-      if (!pdfResponse.data || !pdfResponse.data.status || !pdfResponse.data.pdf_url) {
+      const tempPdfUrl = pdfResponse.data?.pdf_url || pdfResponse.data?.response?.pdf_url;
+
+      if (!pdfResponse.data || !pdfResponse.data.status || !tempPdfUrl) {
         this.logger.error(`MatchMaking PDF Error: ${JSON.stringify(pdfResponse.data)}`);
         throw new HttpException('Failed to generate Match Making PDF', HttpStatus.INTERNAL_SERVER_ERROR);
       }
-
-      const tempPdfUrl = pdfResponse.data.pdf_url;
       this.logger.log(`PDF Generated successfully: ${tempPdfUrl}`);
 
       const downloadResponse = await axios.get(tempPdfUrl, { responseType: 'arraybuffer' });
@@ -276,9 +272,6 @@ harmony, and a renewed sense of purpose.`);
     place: string;
     language: string;
   }): Promise<string> {
-    // TEMPORARILY DISABLED AS PER REQUEST
-    throw new HttpException('Service is currently unavailable due to high server load. Please try again after some time.', HttpStatus.SERVICE_UNAVAILABLE);
-
     const userId = this.configService.get<string>('ASTROLOGY_API_USER_ID');
     const apiKey = this.configService.get<string>('ASTROLOGY_API_KEY');
 
@@ -350,12 +343,12 @@ harmony, and a renewed sense of purpose.`);
         }
       );
 
-      if (!pdfResponse.data || !pdfResponse.data.status || !pdfResponse.data.pdf_url) {
+      const tempPdfUrl = pdfResponse.data?.pdf_url || pdfResponse.data?.response?.pdf_url;
+
+      if (!pdfResponse.data || !pdfResponse.data.status || !tempPdfUrl) {
         this.logger.error(`AstrologyAPI PDF Error: ${JSON.stringify(pdfResponse.data)}`);
         throw new HttpException('Failed to generate PDF from provider', HttpStatus.INTERNAL_SERVER_ERROR);
       }
-
-      const tempPdfUrl = pdfResponse.data.pdf_url;
       this.logger.log(`PDF Generated successfully at temporary URL: ${tempPdfUrl}`);
 
       const downloadResponse = await axios.get(tempPdfUrl, { responseType: 'arraybuffer' });
@@ -393,9 +386,6 @@ harmony, and a renewed sense of purpose.`);
     language: string;
     chart_style: string;
   }): Promise<string> {
-    // TEMPORARILY DISABLED AS PER REQUEST
-    throw new HttpException('Service is currently unavailable due to high server load. Please try again after some time.', HttpStatus.SERVICE_UNAVAILABLE);
-
     const userId = this.configService.get<string>('ASTROLOGY_API_USER_ID');
     const apiKey = this.configService.get<string>('ASTROLOGY_API_KEY');
 
@@ -458,12 +448,12 @@ harmony, and a renewed sense of purpose.`);
         }
       );
 
-      if (!pdfResponse.data || !pdfResponse.data.status || !pdfResponse.data.pdf_url) {
+      const tempPdfUrl = pdfResponse.data?.pdf_url || pdfResponse.data?.response?.pdf_url;
+
+      if (!pdfResponse.data || !pdfResponse.data.status || !tempPdfUrl) {
         this.logger.error(`AstrologyAPI PDF Error: ${JSON.stringify(pdfResponse.data)}`);
         throw new HttpException('Failed to generate PDF from provider', HttpStatus.INTERNAL_SERVER_ERROR);
       }
-
-      const tempPdfUrl = pdfResponse.data.pdf_url;
       this.logger.log(`PDF Generated successfully at temporary URL: ${tempPdfUrl}`);
 
       const downloadResponse = await axios.get(tempPdfUrl, { responseType: 'arraybuffer' });
