@@ -20,8 +20,8 @@ RUN npm install
 
 # Copy Python requirements and install
 COPY requirements.txt ./
-RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --upgrade pip --break-system-packages
+RUN pip3 install --no-cache-dir -r requirements.txt --break-system-packages
 
 # Copy the rest of the application
 COPY . .
