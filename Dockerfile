@@ -2,7 +2,7 @@
 FROM node:22-bullseye
 
 # Install Python and build dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update && apt-get install -y \
     python3 \
     python3-pip \
     python3-dev \
