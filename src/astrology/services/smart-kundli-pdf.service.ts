@@ -39,7 +39,7 @@ export class SmartKundliPdfService {
       this.logger.log(`Fetching geo details for place: ${data.place}`);
       const geoResponse = await axios.get(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(data.place)}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'VaidikTalk/1.0' } }
+        { headers: { 'User-Agent': 'AstroSolution/1.0' } }
       );
 
       if (!geoResponse.data || geoResponse.data.length === 0) {
@@ -68,12 +68,12 @@ export class SmartKundliPdfService {
       formData.append('chart_style', data.chart_style || 'NORTH_INDIAN');
 
       // Fixed branding fields
-      formData.append('footer_link', 'https://vaidiktalk.com');
+      formData.append('footer_link', 'https://AstroSolution.com');
       formData.append('logo_url', 'https://vaidik-test.s3.ap-south-1.amazonaws.com/assets/Vaidik-talk1-full.png');
-      formData.append('company_name', 'VaidikTalk');
-      formData.append('company_info', 'VaidikTalk, founded by Shri Jitendra Kumar Mishra, bridges the gap between ancient Vedic wisdom and the modern seeker\'s need for clarity. We believe astrology should be a powerful, accessible tool for everyone. By blending time-tested traditions with user-friendly explanations, we transform complex cosmic insights into practical, actionable guidance without unnecessary jargon. Why Choose Us? We feature an advanced AI Astrology Platform for instant insights, guidance from expert astrologers, accurate and reliable predictions tailored to your life goals, and a 100% privacy guarantee for all your data and consultations. VaidikTalk is more than just a service—we are your trusted spiritual companion, committed to empowering you to navigate life\'s challenges with confidence, harmony, and a renewed sense of purpose.');
-      formData.append('domain_url', 'https://vaidiktalk.com');
-      formData.append('company_email', 'contact@vaidiktalk.com');
+      formData.append('company_name', 'AstroSolution');
+      formData.append('company_info', 'AstroSolution, founded by Shri Jitendra Kumar Mishra, bridges the gap between ancient Vedic wisdom and the modern seeker\'s need for clarity. We believe astrology should be a powerful, accessible tool for everyone. By blending time-tested traditions with user-friendly explanations, we transform complex cosmic insights into practical, actionable guidance without unnecessary jargon. Why Choose Us? We feature an advanced AI Astrology Platform for instant insights, guidance from expert astrologers, accurate and reliable predictions tailored to your life goals, and a 100% privacy guarantee for all your data and consultations. AstroSolution is more than just a service—we are your trusted spiritual companion, committed to empowering you to navigate life\'s challenges with confidence, harmony, and a renewed sense of purpose.');
+      formData.append('domain_url', 'https://AstroSolution.com');
+      formData.append('company_email', 'contact@AstroSolution.com');
       formData.append('company_landline', '+919818999037');
       formData.append('company_mobile', '+919818999037');
 
@@ -159,7 +159,7 @@ export class SmartKundliPdfService {
     try {
       // 1. Get Geo Details for Male
       this.logger.log(`Fetching geo details for male place: ${data.m_place}`);
-      const mGeoRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(data.m_place)}&format=json&limit=1`, { headers: { 'User-Agent': 'VaidikTalk/1.0' } });
+      const mGeoRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(data.m_place)}&format=json&limit=1`, { headers: { 'User-Agent': 'AstroSolution/1.0' } });
       if (!mGeoRes.data || mGeoRes.data.length === 0) throw new HttpException('Invalid male birth place.', HttpStatus.BAD_REQUEST);
       const mLat = parseFloat(mGeoRes.data[0].lat);
       const mLon = parseFloat(mGeoRes.data[0].lon);
@@ -167,7 +167,7 @@ export class SmartKundliPdfService {
 
       // 2. Get Geo Details for Female
       this.logger.log(`Fetching geo details for female place: ${data.f_place}`);
-      const fGeoRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(data.f_place)}&format=json&limit=1`, { headers: { 'User-Agent': 'VaidikTalk/1.0' } });
+      const fGeoRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(data.f_place)}&format=json&limit=1`, { headers: { 'User-Agent': 'AstroSolution/1.0' } });
       if (!fGeoRes.data || fGeoRes.data.length === 0) throw new HttpException('Invalid female birth place.', HttpStatus.BAD_REQUEST);
       const fLat = parseFloat(fGeoRes.data[0].lat);
       const fLon = parseFloat(fGeoRes.data[0].lon);
@@ -206,10 +206,10 @@ export class SmartKundliPdfService {
       formData.append('chart_style', data.chart_style || 'NORTH_INDIAN');
 
       // Branding fields
-      formData.append('footer_link', 'https://vaidiktalk.com');
+      formData.append('footer_link', 'https://AstroSolution.com');
       formData.append('logo_url', 'https://vaidik-test.s3.ap-south-1.amazonaws.com/assets/Vaidik-talk1-full.png');
-      formData.append('company_name', 'VaidikTalk');
-      formData.append('company_info', `VaidikTalk, founded by Shri Jitendra Kumar Mishra, bridges the gap between
+      formData.append('company_name', 'AstroSolution');
+      formData.append('company_info', `AstroSolution, founded by Shri Jitendra Kumar Mishra, bridges the gap between
 ancient Vedic wisdom and the modern seeker's need for clarity. We believe
 astrology should be a powerful, accessible tool for everyone. By blending time-
 tested traditions with user-friendly explanations, we transform complex cosmic
@@ -217,11 +217,11 @@ insights into practical, actionable guidance without unnecessary jargon. Why
 Choose Us? We feature an advanced AI Astrology Platform for instant insights,
 guidance from expert astrologers, accurate and reliable predictions tailored to your
 life goals, and a 100% privacy guarantee for all your data and consultations.
-VaidikTalk is more than just a service—we are your trusted spiritual companion,
+AstroSolution is more than just a service—we are your trusted spiritual companion,
 committed to empowering you to navigate life's challenges with confidence,
 harmony, and a renewed sense of purpose.`);
-      formData.append('domain_url', 'https://vaidiktalk.com');
-      formData.append('company_email', 'contact@vaidiktalk.com');
+      formData.append('domain_url', 'https://AstroSolution.com');
+      formData.append('company_email', 'contact@AstroSolution.com');
       formData.append('company_landline', '+919818999037');
       formData.append('company_mobile', '+919818999037');
 
@@ -284,7 +284,7 @@ harmony, and a renewed sense of purpose.`);
       this.logger.log(`Fetching geo details for place: ${data.place}`);
       const geoResponse = await axios.get(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(data.place)}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'VaidikTalk/1.0' } }
+        { headers: { 'User-Agent': 'AstroSolution/1.0' } }
       );
 
       if (!geoResponse.data || geoResponse.data.length === 0) {
@@ -311,10 +311,10 @@ harmony, and a renewed sense of purpose.`);
       formData.append('language', data.language === 'hi' ? 'hi' : 'en');
 
       // Branding fields
-      formData.append('footer_link', 'https://vaidiktalk.com');
+      formData.append('footer_link', 'https://AstroSolution.com');
       formData.append('logo_url', 'https://vaidik-test.s3.ap-south-1.amazonaws.com/assets/Vaidik-talk1-full.png');
-      formData.append('company_name', 'VaidikTalk');
-      formData.append('company_info', `VaidikTalk, founded by Shri Jitendra Kumar Mishra, bridges the gap between
+      formData.append('company_name', 'AstroSolution');
+      formData.append('company_info', `AstroSolution, founded by Shri Jitendra Kumar Mishra, bridges the gap between
 ancient Vedic wisdom and the modern seeker's need for clarity. We believe
 astrology should be a powerful, accessible tool for everyone. By blending time-
 tested traditions with user-friendly explanations, we transform complex cosmic
@@ -322,11 +322,11 @@ insights into practical, actionable guidance without unnecessary jargon. Why
 Choose Us? We feature an advanced AI Astrology Platform for instant insights,
 guidance from expert astrologers, accurate and reliable predictions tailored to your
 life goals, and a 100% privacy guarantee for all your data and consultations.
-VaidikTalk is more than just a service—we are your trusted spiritual companion,
+AstroSolution is more than just a service—we are your trusted spiritual companion,
 committed to empowering you to navigate life's challenges with confidence,
 harmony, and a renewed sense of purpose.`);
-      formData.append('domain_url', 'https://vaidiktalk.com');
-      formData.append('company_email', 'contact@vaidiktalk.com');
+      formData.append('domain_url', 'https://AstroSolution.com');
+      formData.append('company_email', 'contact@AstroSolution.com');
       formData.append('company_landline', '+919818999037');
       formData.append('company_mobile', '+919818999037');
 
@@ -398,7 +398,7 @@ harmony, and a renewed sense of purpose.`);
       this.logger.log(`Fetching geo details for place: ${data.place}`);
       const geoResponse = await axios.get(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(data.place)}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'VaidikTalk/1.0' } }
+        { headers: { 'User-Agent': 'AstroSolution/1.0' } }
       );
 
       if (!geoResponse.data || geoResponse.data.length === 0) {
@@ -426,12 +426,12 @@ harmony, and a renewed sense of purpose.`);
       formData.append('chart_style', data.chart_style || 'NORTH_INDIAN');
 
       // Branding fields
-      formData.append('footer_link', 'https://vaidiktalk.com');
+      formData.append('footer_link', 'https://AstroSolution.com');
       formData.append('logo_url', 'https://vaidik-test.s3.ap-south-1.amazonaws.com/assets/Vaidik-talk1-full.png');
-      formData.append('company_name', 'VaidikTalk');
-      formData.append('company_info', `VaidikTalk, founded by Shri Jitendra Kumar Mishra, bridges the gap between ancient Vedic wisdom and the modern seeker's need for clarity. We believe astrology should be a powerful, accessible tool for everyone. By blending time-tested traditions with user-friendly explanations, we transform complex cosmic insights into practical, actionable guidance without unnecessary jargon. Why Choose Us? We feature an advanced AI Astrology Platform for instant insights, guidance from expert astrologers, accurate and reliable predictions tailored to your life goals, and a 100% privacy guarantee for all your data and consultations. VaidikTalk is more than just a service—we are your trusted spiritual companion, committed to empowering you to navigate life's challenges with confidence, harmony, and a renewed sense of purpose.`);
-      formData.append('domain_url', 'https://vaidiktalk.com');
-      formData.append('company_email', 'contact@vaidiktalk.com');
+      formData.append('company_name', 'AstroSolution');
+      formData.append('company_info', `AstroSolution, founded by Shri Jitendra Kumar Mishra, bridges the gap between ancient Vedic wisdom and the modern seeker's need for clarity. We believe astrology should be a powerful, accessible tool for everyone. By blending time-tested traditions with user-friendly explanations, we transform complex cosmic insights into practical, actionable guidance without unnecessary jargon. Why Choose Us? We feature an advanced AI Astrology Platform for instant insights, guidance from expert astrologers, accurate and reliable predictions tailored to your life goals, and a 100% privacy guarantee for all your data and consultations. AstroSolution is more than just a service—we are your trusted spiritual companion, committed to empowering you to navigate life's challenges with confidence, harmony, and a renewed sense of purpose.`);
+      formData.append('domain_url', 'https://AstroSolution.com');
+      formData.append('company_email', 'contact@AstroSolution.com');
       formData.append('company_landline', '+919818999037');
       formData.append('company_mobile', '+919818999037');
 

@@ -42,7 +42,7 @@ export class Blog extends Document {
   @Prop()
   schemaMarkup: string; // JSON-LD schema markup
 
-  @Prop({ default: 'VaidikTalk Editorial' })
+  @Prop({ default: 'AstroSolution Editorial' })
   authorName: string;
 
   @Prop()

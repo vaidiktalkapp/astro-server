@@ -107,7 +107,7 @@ import { ContactInquiriesModule } from './contact-inquiries/contact-inquiries.mo
               socket: {
                 tls: redisUrl.startsWith('rediss://'), // enable TLS for Upstash
               },
-              keyPrefix: 'vaidiktalk:',
+              keyPrefix: 'AstroSolution:',
             });
             console.log('✅ Connected to remote Redis:', redisUrl);
           } else {
@@ -119,7 +119,7 @@ import { ContactInquiriesModule } from './contact-inquiries/contact-inquiries.mo
               },
               ttl: 300,
               database: 0,
-              keyPrefix: 'vaidiktalk:',
+              keyPrefix: 'AstroSolution:',
             });
             console.log('✅ Connected to local Redis');
           }

@@ -28,7 +28,7 @@ interface AuthSocket extends Socket {
 
 @WebSocketGateway({
     cors: {
-        origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://localhost:3005', 'http://localhost:5173', 'https://vaidik-web.netlify.app', 'https://vaidiktalk-ai-2-1a2t.vercel.app', 'https://vaidiktalk-ai-2.vercel.app', 'https://vaidik-admin.netlify.app', 'https://vaidiktalk-ai.vercel.app', 'https://vaidiktalkweb.vercel.app', 'https://vaidiktalkaiadmin.vercel.app', 'https://web-vaidik-main.vercel.app', 'https://admin-portal-rho-two.vercel.app', 'https://admin-portal-9x2pjk4h9-rajkumaryadav2749s-projects.vercel.app'],
+        origin: ['http://localhost:3000', 'https://astro-website-tawny.vercel.app', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://localhost:3005', 'http://localhost:5173', 'https://vaidik-web.netlify.app', 'https://AstroSolution-ai-2-1a2t.vercel.app', 'https://AstroSolution-ai-2.vercel.app', 'https://vaidik-admin.netlify.app', 'https://AstroSolution-ai.vercel.app', 'https://AstroSolutionweb.vercel.app', 'https://AstroSolutionaiadmin.vercel.app', 'https://web-vaidik-main.vercel.app', 'https://admin-portal-rho-two.vercel.app', 'https://admin-portal-9x2pjk4h9-rajkumaryadav2749s-projects.vercel.app'],
         credentials: true,
         methods: ['GET', 'POST'],
     },

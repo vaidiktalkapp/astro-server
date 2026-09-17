@@ -17,6 +17,6 @@ describe('AppController', () => {
       {} as any,
       {} as any,
     );
-    expect(controller.getHello()).toBe('Welcome to Vaidik Talk Backend API! 🚀');
+    expect(controller.getHello()).toBe('Welcome to AstroSolution Backend API! 🚀');
   });
 });

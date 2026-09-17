@@ -531,7 +531,7 @@ export class AstrologyContentService {
 </ul>
 
 <h2>Step 1: Generate Your Kundli</h2>
-<p>Use the <a href="/kundli"><strong>free Kundli generator on VaidikTalk</strong></a> to create your birth chart by entering your exact date, time, and place of birth.</p>
+<p>Use the <a href="/kundli"><strong>free Kundli generator on AstroSolution</strong></a> to create your birth chart by entering your exact date, time, and place of birth.</p>
 
 <h2>Step 2: Find Your Ascendant (Lagna)</h2>
 <p>In the North Indian chart, look at the <strong>top-center diamond</strong>. The number written there is your Ascendant sign. This is the foundation of your entire horoscope.</p>

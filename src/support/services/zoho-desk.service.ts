@@ -100,7 +100,7 @@ export class ZohoDeskService {
       (name || 'user')
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '') || 'user';
-    return `${localPart}.${safePhone}@vaidiktalk.com`;
+    return `${localPart}.${safePhone}@AstroSolution.com`;
   }
 
 /**

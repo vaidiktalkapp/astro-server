@@ -1,12 +1,12 @@
 // SECURITY AUDIT SCRIPT - READ ONLY, NO CHANGES
 const { MongoClient } = require('./node_modules/mongoose/node_modules/mongodb');
-const uri = process.env.MONGO_URI || 'mongodb+srv://vadiktalk:7fnBvxiPrutuSu7G@cluster0.zjkqtzw.mongodb.net/vaidiktalk';
+const uri = process.env.MONGO_URI || 'mongodb+srv://vadiktalk:7fnBvxiPrutuSu7G@cluster0.zjkqtzw.mongodb.net/AstroSolution';
 
 async function runAudit() {
   const client = new MongoClient(uri);
   try {
     await client.connect();
-    const db = client.db('vaidiktalk');
+    const db = client.db('AstroSolution');
     console.log('\n✅ Connected to MongoDB\n');
 
     // ============ 1. ADMIN USERS ============

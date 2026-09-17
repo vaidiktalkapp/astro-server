@@ -398,7 +398,7 @@ export class AuthService {
         // Asynchronously check settings and send WhatsApp welcome message via Interakt
         this.systemSettingsModel.findOne().then(settings => {
           if (settings && settings.isInteraktWelcomeEnabled && settings.interaktWelcomeTemplateName) {
-            const welcomeText = settings.interaktWelcomeMessageText || "Congratulations\n🎉You have unlocked a special welcome offer on VaidikTalk! Get 100 Credits in your wallet for just ₹1.🎁\nDon't miss out on this limited-time offer. Recharge your wallet now and start your spiritual journey with us! ✨";
+            const welcomeText = settings.interaktWelcomeMessageText || "Congratulations\n🎉You have unlocked a special welcome offer on AstroSolution! Get 100 Credits in your wallet for just ₹1.🎁\nDon't miss out on this limited-time offer. Recharge your wallet now and start your spiritual journey with us! ✨";
             this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName, [welcomeText])
               .catch(e => this.logger.error('Failed to send Interakt welcome message:', e));
           }
@@ -569,7 +569,7 @@ export class AuthService {
         // Asynchronously check settings and send WhatsApp welcome message via Interakt
         this.systemSettingsModel.findOne().then(settings => {
           if (settings && settings.isInteraktWelcomeEnabled && settings.interaktWelcomeTemplateName) {
-            const welcomeText = settings.interaktWelcomeMessageText || "🎉You have unlocked a special welcome offer on VaidikTalk! Get 100 Credits in your wallet for just ₹1.🎁\nDon't miss out on this limited-time offer. Recharge your wallet now and start your spiritual journey with us! ✨";
+            const welcomeText = settings.interaktWelcomeMessageText || "🎉You have unlocked a special welcome offer on AstroSolution! Get 100 Credits in your wallet for just ₹1.🎁\nDon't miss out on this limited-time offer. Recharge your wallet now and start your spiritual journey with us! ✨";
             this.otpService.sendInteraktWelcomeMessage(phoneNumber, countryCode, settings.interaktWelcomeTemplateName, [welcomeText])
               .catch(e => this.logger.error('Failed to send Interakt welcome message:', e));
           }
@@ -578,7 +578,7 @@ export class AuthService {
 
       return {
         success: true,
-        message: isNewUser ? 'Welcome to VaidikTalk!' : 'Welcome back!',
+        message: isNewUser ? 'Welcome to AstroSolution!' : 'Welcome back!',
         data: {
           user: this.sanitizeUser(user),
           tokens,
@@ -679,7 +679,7 @@ export class AuthService {
       country: userObj.country || '',         // ✅ Safe-Gate: Fallback to empty string
       pincode: userObj.pincode || '',         // ✅ Safe-Gate: Fallback to empty string
       isProfileComplete: userObj.isProfileComplete || false,
-      profileImage: userObj.profileImage || 'https://vaidiktalk.s3.ap-south-1.amazonaws.com/images/row-1-column-1.png',
+      profileImage: userObj.profileImage || 'https://AstroSolution.s3.ap-south-1.amazonaws.com/images/row-1-column-1.png',
       wallet: userObj.wallet,
       stats: userObj.stats,
       isPhoneVerified: userObj.isPhoneVerified || true,

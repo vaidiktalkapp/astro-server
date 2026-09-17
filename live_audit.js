@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 async function liveSecurityAudit() {
-  const uri = 'mongodb+srv://vadiktalk:7fnBvxiPrutuSu7G@cluster0.zjkqtzw.mongodb.net/vaidiktalk';
+  const uri = 'mongodb+srv://vadiktalk:7fnBvxiPrutuSu7G@cluster0.zjkqtzw.mongodb.net/AstroSolution';
   
   try {
     console.log("🔍 STARTING LIVE SECURITY AUDIT...\n");

@@ -80,7 +80,7 @@ export class MatrimonyChatService {
       throw new BadRequestException('You are not a participant in this match.');
     }
 
-    // Deduct from wallet (uses isolated VaidikTalk wallet logic)
+    // Deduct from wallet (uses isolated AstroSolution wallet logic)
     await this.walletService.deductForMatrimonyChat(userId, tier.price, interestId);
 
     // Create the order / Add to existing active order if any

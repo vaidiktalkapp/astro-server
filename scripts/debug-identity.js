@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const MONGO_URI = 'mongodb+srv://vadiktalk:7fnBvxiPrutuSu7G@cluster0.zjkqtzw.mongodb.net/vaidiktalk';
+const MONGO_URI = 'mongodb+srv://vadiktalk:7fnBvxiPrutuSu7G@cluster0.zjkqtzw.mongodb.net/AstroSolution';
 
 async function debug() {
     try {

@@ -84,7 +84,7 @@ export class User {
   })
   pincode?: string;
 
-  @Prop({ required: false, default: 'https://vaidiktalk.s3.ap-south-1.amazonaws.com/images/row-1-column-1.png' })
+  @Prop({ required: false, default: 'https://AstroSolution.s3.ap-south-1.amazonaws.com/images/row-1-column-1.png' })
   profileImage: string;
 
   @Prop({ required: false, default: false })

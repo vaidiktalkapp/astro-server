@@ -1,6 +1,6 @@
 # Vaidik Server API Reference
 
-Comprehensive reference for the Vaidik Talk NestJS backend (`src/`). All HTTP routes are served under the global prefix `https://<host>/api/v1` as configured in `src/main.ts`. This document highlights available endpoints, required guards, input DTOs, response semantics, and integration touchpoints.
+Comprehensive reference for the AstroSolution NestJS backend (`src/`). All HTTP routes are served under the global prefix `https://<host>/api/v1` as configured in `src/main.ts`. This document highlights available endpoints, required guards, input DTOs, response semantics, and integration touchpoints.
 
 ---
 
@@ -47,7 +47,7 @@ GET https://api.vaidik.app/api/v1/health
 {
   "status": "OK",
   "timestamp": "2025-02-12T11:32:14.082Z",
-  "service": "Vaidik Talk Backend API",
+  "service": "AstroSolution Backend API",
   "version": "1.0.0",
   "environment": "production",
   "database": { "status": "connected", "name": "MongoDB" },

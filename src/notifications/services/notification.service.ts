@@ -561,7 +561,7 @@ export class NotificationService {
         messageId: data.messageId,
       },
       imageUrl: data.senderAvatar,
-      actionUrl: `vaidiktalk://chat/${data.chatId}`,
+      actionUrl: `AstroSolution://chat/${data.chatId}`,
       priority: config.priority,
     });
   }
@@ -594,7 +594,7 @@ export class NotificationService {
         groupName: data.groupName,
       },
       imageUrl: data.senderAvatar,
-      actionUrl: `vaidiktalk://chat/${data.chatId}`,
+      actionUrl: `AstroSolution://chat/${data.chatId}`,
       priority: config.priority,
     });
   }
@@ -692,7 +692,7 @@ export class NotificationService {
         eventStartTime: data.eventStartTime?.toISOString(),
       },
       imageUrl: data.astrologerAvatar,
-      actionUrl: `vaidiktalk://event/${data.eventId}`,
+      actionUrl: `AstroSolution://event/${data.eventId}`,
       priority: config.priority,
     });
   }

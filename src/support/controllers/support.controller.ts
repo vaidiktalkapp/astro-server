@@ -45,10 +45,10 @@ export class SupportController {
     const isAstrologer = !!req.user.astrologerId;
     const categories = {
       user: [
-        { id: 'refund', text: 'I am facing issues while Recharging on Vaidiktalk', icon: '💰' },
+        { id: 'refund', text: 'I am facing issues while Recharging on AstroSolution', icon: '💰' },
         { id: 'session', text: 'I need help with my Free session', icon: '🎁' },
         { id: 'language', text: 'Change the language', icon: '🌐' },
-        { id: 'guidance', text: 'I need guidance in using the Vaidiktalk app', icon: '📱' },
+        { id: 'guidance', text: 'I need guidance in using the AstroSolution app', icon: '📱' },
         { id: 'privacy', text: 'I have my Privacy related doubts', icon: '🔒' },
       ],
       astrologer: [
@@ -219,7 +219,7 @@ export class SupportController {
     const payload = {
       iss: asapAppId,
       email: userContext.email || syntheticEmail,
-      name: userContext.name || userContext.firstName || 'Vaidiktalk User',
+      name: userContext.name || userContext.firstName || 'AstroSolution User',
       email_verified: true,
       iat: now - 60, // Backdate by 60s
       exp: now + 540, // 9 minutes in the future (max allowed is 10m)

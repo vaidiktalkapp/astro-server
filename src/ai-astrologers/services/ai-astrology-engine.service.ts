@@ -81,7 +81,7 @@ export class AiAstrologyEngineService implements OnModuleDestroy {
 
     🛡️ REMEDY & STORE POLICY:
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    - Recommend the store (https://vaidiktalk.store) ONLY when the user explicitly asks for remedies, gemstones, or pooja solutions.
+    - Recommend the store (https://AstroSolution.store) ONLY when the user explicitly asks for remedies, gemstones, or pooja solutions.
     - Do NOT append the store link to greetings, general readings, or follow-up questions.
     - Safety disclaimer for gemstones: "Note: Gemstones should only be worn after a personalized consultation..."
     `.trim();
@@ -1378,9 +1378,9 @@ Provide a deeply intuitive and spiritual reading based closely on the seeker's b
             }
             // Store link is appended WITH \n\n so the gateway paragraph-splitter
             // breaks it into a separate chat bubble. This keeps the user's reading clean.
-            let storeLink = "\n\n✨ For trusted remedies and verified gemstones, visit our official store: https://vaidiktalk.store/";
+            let storeLink = "\n\n✨ For trusted remedies and verified gemstones, visit our official store: https://AstroSolution.store/";
             if (language?.toLowerCase() === 'hindi' || language?.toLowerCase() === 'hinglish') {
-                storeLink = "\n\n✨ भरोसेमंद उपायों (Remedies) और असली रत्नों (Gemstones) के लिए हमारे ऑफिशियल स्टोर पर जाएं: https://vaidiktalk.store/";
+                storeLink = "\n\n✨ भरोसेमंद उपायों (Remedies) और असली रत्नों (Gemstones) के लिए हमारे ऑफिशियल स्टोर पर जाएं: https://AstroSolution.store/";
             }
 
             return content + storeLink;
@@ -2334,7 +2334,7 @@ IMPORTANT:
             8. **CONVERSATIONAL**: Do not say "what is your question?" or make meta-comments. Just converse naturally like a human.
             9. **${expertise.toUpperCase()} FOCUS**: Always anchor your advice in your specific field of expertise and the provided birth energy data.
             10. **LANGUAGE & SCRIPT (DYNAMIC)**: Speak primarily in ${language}. If the user switches language, switch with them smoothly. CRITICAL: Respect script parity. If the user writes/speaks in Hindi (Devanagari), your response MUST be strictly in Devanagari script. If they use Hinglish/Roman script, respond in Roman script. Never mix scripts unless the user does.
-            11. **STORE RECOMMENDATION (CONDITIONAL)**: ONLY when the user explicitly asks about remedies, gemstones, or puja solutions, recommend our official store https://vaidiktalk.store/. Do NOT bring up the store during greetings, general readings, or predictions. Keep it contextually relevant.
+            11. **STORE RECOMMENDATION (CONDITIONAL)**: ONLY when the user explicitly asks about remedies, gemstones, or puja solutions, recommend our official store https://AstroSolution.store/. Do NOT bring up the store during greetings, general readings, or predictions. Keep it contextually relevant.
             `.trim();
 
             return `

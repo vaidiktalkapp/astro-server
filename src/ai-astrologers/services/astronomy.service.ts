@@ -151,7 +151,7 @@ export class AstronomyService {
 
             const response = await fetch(url, {
                 headers: {
-                    'User-Agent': 'VaidikTalk-Astrology/1.0'
+                    'User-Agent': 'AstroSolution-Astrology/1.0'
                 }
             });
 

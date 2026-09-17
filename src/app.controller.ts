@@ -23,7 +23,7 @@ export class AppController {
     const health = {
       status: 'OK',
       timestamp: new Date().toISOString(),
-      service: 'Vaidik Talk Backend API',
+      service: 'AstroSolution Backend API',
       version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       database: {
@@ -63,7 +63,7 @@ export class AppController {
   async getApiHealth() {
     return {
       status: 'OK',
-      message: 'Vaidik Talk API is running',
+      message: 'AstroSolution API is running',
       timestamp: new Date().toISOString(),
       endpoints: {
         auth: '/api/v1/auth',

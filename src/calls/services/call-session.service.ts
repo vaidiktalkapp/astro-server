@@ -1270,7 +1270,7 @@ export class CallSessionService {
         ...s,
         astrologerId: {
           ...astrologer,
-          profilePicture: astrologer?.profilePicture || astrologer?.image || '/vaidiktalklogo.png'
+          profilePicture: astrologer?.profilePicture || astrologer?.image || '/AstroSolutionlogo.png'
         }
       };
     });
